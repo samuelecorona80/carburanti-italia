@@ -74,6 +74,7 @@ async function init() {
 function render() {
     renderHeader();
     renderCards();
+    renderSearchSection();
     renderTrendChart();
     renderRegionalTable();
     initSearch();
@@ -1115,6 +1116,364 @@ function renderRouteOnMap(found, from, to) {
 }
 
 
+
+
+
+// -- Cerca Distributore (practical search) ----------------------------------
+
+function renderSearchSection() {
+    if (!STATIONS || STATIONS.length === 0) return;
+
+    var section = document.createElement("section");
+    section.className = "section";
+    section.id = "search-station-section";
+
+    section.innerHTML = '<div class="section-header"><h2>&#128270; Cerca Distributore</h2>' +
+        '<span style="color:var(--muted);font-size:0.85em;">Trova il piu economico vicino a te</span></div>' +
+        '<div class="search-station-form" id="search-station-form">' +
+        '  <div class="ssf-row">' +
+        '    <div class="ssf-field ssf-field-zona">' +
+        '      <label for="ss-zona">Zona</label>' +
+        '      <div class="ssf-input-group">' +
+        '        <input type="text" id="ss-zona" placeholder="Indirizzo, citta o CAP..." autocomplete="off">' +
+        '        <button type="button" id="ss-gps-btn" title="Usa la mia posizione">GPS</button>' +
+        '      </div>' +
+        '      <div id="ss-zona-dropdown" class="ss-dropdown"></div>' +
+        '    </div>' +
+        '    <div class="ssf-field ssf-field-raggio">' +
+        '      <label for="ss-raggio">Raggio: <strong id="ss-raggio-val">5</strong> km</label>' +
+        '      <input type="range" id="ss-raggio" min="1" max="30" value="5" step="1">' +
+        '    </div>' +
+        '    <div class="ssf-field">' +
+        '      <label for="ss-fuel">Carburante</label>' +
+        '      <select id="ss-fuel"><option value="Gasolio">Gasolio</option><option value="Benzina">Benzina</option><option value="GPL">GPL</option><option value="Metano">Metano</option></select>' +
+        '    </div>' +
+        '    <div class="ssf-field">' +
+        '      <label for="ss-mode">Modalita</label>' +
+        '      <select id="ss-mode"><option value="self">Self-service</option><option value="servito">Servito</option></select>' +
+        '    </div>' +
+        '    <div class="ssf-field ssf-field-btn">' +
+        '      <button type="button" id="ss-search-btn" class="ss-btn-primary">Cerca</button>' +
+        '    </div>' +
+        '  </div>' +
+        '</div>' +
+        '<div id="ss-status" style="display:none;padding:12px 0;color:var(--muted);"></div>' +
+        '<div id="ss-results-wrap" style="display:none;">' +
+        '  <div id="ss-savings" style="display:none;"></div>' +
+        '  <div class="table-responsive"><div id="ss-results-table"></div></div>' +
+        '</div>';
+
+    // Insert after cards container (national overview) and before favorites
+    var cardsSection = document.getElementById("cards-container");
+    var parentEl = cardsSection ? cardsSection.closest("section") || cardsSection.parentNode : null;
+    if (parentEl && parentEl.nextSibling) {
+        parentEl.parentNode.insertBefore(section, parentEl.nextSibling);
+    } else {
+        var mainEl = document.querySelector("main.container") || document.querySelector("main");
+        if (mainEl) mainEl.appendChild(section);
+    }
+
+    // Inject styles for the search form
+    var style = document.createElement("style");
+    style.textContent = '.search-station-form{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px;margin-bottom:16px}' +
+        '.ssf-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}' +
+        '.ssf-field{display:flex;flex-direction:column;gap:4px;min-width:140px}' +
+        '.ssf-field-zona{flex:2;min-width:220px}' +
+        '.ssf-field-raggio{flex:1;min-width:160px}' +
+        '.ssf-field label{font-size:.78em;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}' +
+        '.ssf-input-group{display:flex;gap:6px}' +
+        '.ssf-input-group input{flex:1}' +
+        '#ss-zona,#ss-fuel,#ss-mode,#ss-raggio{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;color:var(--text);font-size:.92em;outline:none;transition:border-color .2s}' +
+        '#ss-zona:focus,#ss-fuel:focus,#ss-mode:focus{border-color:rgba(63,140,255,.5)}' +
+        '#ss-fuel,#ss-mode{cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%239fb2c7\' d=\'M2 4l4 4 4-4z\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}' +
+        '#ss-raggio{-webkit-appearance:none;appearance:none;height:6px;background:rgba(255,255,255,.1);border-radius:3px;border:none;padding:0;margin-top:8px;cursor:pointer}' +
+        '#ss-raggio::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#3f8cff;border:2px solid rgba(255,255,255,.2);cursor:pointer;box-shadow:0 2px 6px rgba(63,140,255,.3)}' +
+        '#ss-raggio::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#3f8cff;border:2px solid rgba(255,255,255,.2);cursor:pointer}' +
+        '#ss-gps-btn{background:rgba(63,140,255,.15);border:1px solid rgba(63,140,255,.3);border-radius:10px;padding:10px 14px;color:#3f8cff;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}' +
+        '#ss-gps-btn:hover{background:rgba(63,140,255,.25)}' +
+        '.ss-btn-primary{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:600;font-size:.92em;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 12px rgba(37,99,235,.3);white-space:nowrap}' +
+        '.ss-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(37,99,235,.4)}' +
+        '.ssf-field-btn{justify-content:flex-end}' +
+        '.ss-dropdown{position:absolute;z-index:999;background:var(--card,rgba(12,27,45,.95));border:1px solid rgba(255,255,255,.1);border-radius:10px;max-height:220px;overflow-y:auto;display:none;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,.4)}' +
+        '.ss-dropdown.open{display:block}' +
+        '.ss-dropdown-item{padding:10px 14px;cursor:pointer;font-size:.88em;border-bottom:1px solid rgba(255,255,255,.04)}' +
+        '.ss-dropdown-item:hover{background:rgba(63,140,255,.1)}' +
+        '.ss-dropdown-item small{color:var(--muted);margin-left:6px}' +
+        '.ssf-field-zona{position:relative}' +
+        '#ss-savings{background:rgba(100,231,139,.08);border:1px solid rgba(100,231,139,.2);border-radius:12px;padding:14px 18px;margin-bottom:14px}' +
+        '#ss-savings .saving-big{color:#64e78b;font-weight:700;font-size:1.1em}' +
+        '.ss-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.5px}' +
+        '.ss-badge-best{background:rgba(16,185,129,.15);color:#10b981}' +
+        '.ss-badge-avg{background:rgba(245,158,11,.12);color:#f59e0b}' +
+        '.ss-badge-high{background:rgba(239,68,68,.12);color:#ef4444}' +
+        '.ss-rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:.72em;font-weight:700}' +
+        '.ss-rank-1{background:rgba(100,231,139,.2);color:#64e78b}' +
+        '.ss-rank-2{background:rgba(63,140,255,.15);color:#3f8cff}' +
+        '.ss-rank-3{background:rgba(167,139,250,.15);color:#a78bfa}' +
+        '.ss-rank-n{background:rgba(255,255,255,.06);color:var(--muted)}' +
+        '@media(max-width:700px){.ssf-row{flex-direction:column}.ssf-field{min-width:100%!important}.ssf-field-btn{align-items:stretch}.ss-btn-primary{width:100%}}';
+    document.head.appendChild(style);
+
+    // Event handlers
+    var raggioDrag = document.getElementById("ss-raggio");
+    var raggioVal = document.getElementById("ss-raggio-val");
+    raggioDrag.addEventListener("input", function() { raggioVal.textContent = raggioDrag.value; });
+
+    document.getElementById("ss-search-btn").addEventListener("click", doStationSearch);
+
+    // Enter key triggers search
+    document.getElementById("ss-zona").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            var dd = document.getElementById("ss-zona-dropdown");
+            if (dd.classList.contains("open")) {
+                var first = dd.querySelector(".ss-dropdown-item");
+                if (first) first.click();
+            } else {
+                doStationSearch();
+            }
+        }
+    });
+
+    // GPS button
+    document.getElementById("ss-gps-btn").addEventListener("click", function() {
+        if (!navigator.geolocation) { alert("Geolocalizzazione non supportata"); return; }
+        var btn = document.getElementById("ss-gps-btn");
+        btn.textContent = "...";
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                ssSearchCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                document.getElementById("ss-zona").value = "La mia posizione (" + pos.coords.latitude.toFixed(4) + ", " + pos.coords.longitude.toFixed(4) + ")";
+                btn.textContent = "GPS";
+                doStationSearch();
+            },
+            function(err) {
+                alert("Posizione non disponibile: " + err.message);
+                btn.textContent = "GPS";
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+
+    // Geocoding dropdown for zona input
+    var ssSearchTimeout = null;
+    document.getElementById("ss-zona").addEventListener("input", function() {
+        ssSearchCoords = null; // Reset manual coords
+        clearTimeout(ssSearchTimeout);
+        var q = this.value.trim();
+        var dd = document.getElementById("ss-zona-dropdown");
+        if (q.length < 3) { dd.classList.remove("open"); return; }
+
+        ssSearchTimeout = setTimeout(function() {
+            fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(q + ", Italia") + "&format=json&limit=5&addressdetails=1",
+                { headers: { "Accept-Language": "it" } })
+            .then(function(r) { return r.json(); })
+            .then(function(results) {
+                if (!results || results.length === 0) { dd.classList.remove("open"); return; }
+                dd.innerHTML = results.map(function(r, i) {
+                    return '<div class="ss-dropdown-item" data-lat="' + r.lat + '" data-lng="' + r.lon + '">' +
+                        r.display_name.split(",").slice(0, 3).join(",") +
+                        '</div>';
+                }).join("");
+                dd.classList.add("open");
+                dd.querySelectorAll(".ss-dropdown-item").forEach(function(item) {
+                    item.addEventListener("click", function() {
+                        ssSearchCoords = { lat: parseFloat(item.dataset.lat), lng: parseFloat(item.dataset.lng) };
+                        document.getElementById("ss-zona").value = item.textContent.trim();
+                        dd.classList.remove("open");
+                        doStationSearch();
+                    });
+                });
+            })
+            .catch(function() { dd.classList.remove("open"); });
+        }, 400);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener("click", function(e) {
+        if (!e.target.closest(".ssf-field-zona")) {
+            document.getElementById("ss-zona-dropdown").classList.remove("open");
+        }
+    });
+
+    // Restore last search
+    try {
+        var saved = JSON.parse(localStorage.getItem("ss_last_search"));
+        if (saved) {
+            document.getElementById("ss-zona").value = saved.zona || "";
+            document.getElementById("ss-raggio").value = saved.raggio || 5;
+            raggioVal.textContent = saved.raggio || 5;
+            document.getElementById("ss-fuel").value = saved.fuel || "Gasolio";
+            document.getElementById("ss-mode").value = saved.mode || "self";
+            if (saved.lat && saved.lng) {
+                ssSearchCoords = { lat: saved.lat, lng: saved.lng };
+            }
+        }
+    } catch(e) {}
+}
+
+var ssSearchCoords = null; // holds { lat, lng } from GPS or geocoding
+
+function doStationSearch() {
+    var zona = document.getElementById("ss-zona").value.trim();
+    var raggio = parseInt(document.getElementById("ss-raggio").value) || 5;
+    var fuel = document.getElementById("ss-fuel").value;
+    var mode = document.getElementById("ss-mode").value;
+
+    if (!zona) {
+        showSSStatus("Inserisci una zona o usa il GPS");
+        return;
+    }
+
+    // Save search params
+    localStorage.setItem("ss_last_search", JSON.stringify({
+        zona: zona, raggio: raggio, fuel: fuel, mode: mode,
+        lat: ssSearchCoords ? ssSearchCoords.lat : null,
+        lng: ssSearchCoords ? ssSearchCoords.lng : null
+    }));
+
+    if (ssSearchCoords) {
+        executeStationSearch(ssSearchCoords.lat, ssSearchCoords.lng, raggio, fuel, mode, zona);
+    } else {
+        // Geocode first
+        showSSStatus("Ricerca posizione...");
+        fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(zona + ", Italia") + "&format=json&limit=1",
+            { headers: { "Accept-Language": "it" } })
+        .then(function(r) { return r.json(); })
+        .then(function(results) {
+            if (!results || results.length === 0) {
+                showSSStatus("Posizione non trovata: " + zona);
+                return;
+            }
+            var lat = parseFloat(results[0].lat);
+            var lng = parseFloat(results[0].lon);
+            ssSearchCoords = { lat: lat, lng: lng };
+            executeStationSearch(lat, lng, raggio, fuel, mode, zona);
+        })
+        .catch(function(err) {
+            showSSStatus("Errore geocoding: " + err.message);
+        });
+    }
+}
+
+function executeStationSearch(lat, lng, raggio, fuel, mode, zonaLabel) {
+    if (!STATIONS || STATIONS.length === 0) {
+        showSSStatus("Dati distributori non ancora caricati. Riprova tra qualche secondo.");
+        return;
+    }
+
+    var found = [];
+    for (var i = 0; i < STATIONS.length; i++) {
+        var s = STATIONS[i];
+        if (!s.lat || !s.lng) continue;
+        var dist = haversine(lat, lng, s.lat, s.lng);
+        if (dist > raggio) continue;
+
+        var priceObj = s.prezzi ? s.prezzi[fuel] : null;
+        if (!priceObj) continue;
+        var price = mode === "self" ? priceObj.self : priceObj.servito;
+        if (price == null || price <= 0) continue;
+
+        found.push({ station: s, dist: dist, price: price });
+    }
+
+    found.sort(function(a, b) { return a.price - b.price; });
+
+    var wrap = document.getElementById("ss-results-wrap");
+    var statusEl = document.getElementById("ss-status");
+    var savingsEl = document.getElementById("ss-savings");
+    var tableEl = document.getElementById("ss-results-table");
+
+    if (found.length === 0) {
+        showSSStatus("Nessun distributore " + fuel + " (" + mode + ") trovato entro " + raggio + " km da " + zonaLabel);
+        wrap.style.display = "none";
+        return;
+    }
+
+    var modeLabel = mode === "self" ? "Self" : "Servito";
+    statusEl.style.display = "block";
+    statusEl.innerHTML = '<strong>' + found.length + '</strong> distributori ' + fuel + ' ' + modeLabel + ' entro <strong>' + raggio + ' km</strong> da ' + zonaLabel;
+
+    // Savings
+    if (found.length >= 2) {
+        var cheapest = found[0].price;
+        var priciest = found[found.length - 1].price;
+        var diff = priciest - cheapest;
+        var saving50L = (diff * 50).toFixed(2);
+        if (diff >= 0.005) {
+            savingsEl.style.display = "block";
+            savingsEl.innerHTML = '<span class="saving-big">Risparmio pieno 50L: ' + saving50L + ' EUR</span>' +
+                '<div style="color:var(--muted);font-size:.82em;margin-top:4px;">Migliore: ' + cheapest.toFixed(3) + ' EUR/L' +
+                ' (' + (found[0].station.bandiera || "") + ') &mdash; Peggiore: ' + priciest.toFixed(3) + ' EUR/L (' + (found[found.length-1].station.bandiera || "") + ')</div>';
+        } else {
+            savingsEl.style.display = "none";
+        }
+    } else {
+        savingsEl.style.display = "none";
+    }
+
+    // Compute average for badge classification
+    var sum = 0;
+    for (var j = 0; j < found.length; j++) sum += found[j].price;
+    var avg = sum / found.length;
+
+    // Results table
+    var html = '<table class="data-table"><thead><tr>' +
+        '<th>#</th><th>Distributore</th><th>Distanza</th><th>Prezzo</th><th>vs Migliore</th><th></th>' +
+        '</tr></thead><tbody>';
+
+    var cheapestPrice = found[0].price;
+    var maxShow = Math.min(found.length, 50);
+    for (var k = 0; k < maxShow; k++) {
+        var f = found[k];
+        var s = f.station;
+        var diff2 = f.price - cheapestPrice;
+        var diffStr = diff2 < 0.001 ? "-" : "+" + diff2.toFixed(3) + " EUR";
+        var diffStyle = diff2 < 0.001 ? "color:#64e78b" : diff2 > 0.05 ? "color:#ef4444" : "color:#ffc65b";
+
+        // Rank badge
+        var rankClass = k === 0 ? "ss-rank-1" : k === 1 ? "ss-rank-2" : k === 2 ? "ss-rank-3" : "ss-rank-n";
+        var rankHtml = '<span class="ss-rank ' + rankClass + '">' + (k+1) + '</span>';
+
+        // Price badge
+        var badge = "";
+        if (k === 0) {
+            badge = '<span class="ss-badge ss-badge-best">Migliore</span>';
+        } else if (f.price <= avg) {
+            badge = '<span class="ss-badge ss-badge-avg">Nella media</span>';
+        } else {
+            badge = '<span class="ss-badge ss-badge-high">Costoso</span>';
+        }
+
+        html += '<tr>' +
+            '<td>' + rankHtml + '</td>' +
+            '<td><strong>' + titleCase(s.bandiera || s.gestore || "") + '</strong><br><span style="color:var(--muted);font-size:.78em;">' + titleCase(s.indirizzo || "") + (s.comune ? ", " + titleCase(s.comune) : "") + '</span></td>' +
+            '<td style="font-family:monospace;white-space:nowrap;">' + f.dist.toFixed(1) + ' km</td>' +
+            '<td style="font-family:monospace;font-weight:700;">' + f.price.toFixed(3) + ' EUR</td>' +
+            '<td style="' + diffStyle + ';font-family:monospace;">' + diffStr + '</td>' +
+            '<td>' + badge + '</td>' +
+            '</tr>';
+    }
+
+    html += '</tbody></table>';
+    tableEl.innerHTML = html;
+    wrap.style.display = "block";
+
+    // Center map on search location and zoom to radius
+    if (map) {
+        map.setView([lat, lng], raggio <= 3 ? 14 : raggio <= 10 ? 12 : 10);
+    }
+
+    // Scroll to results
+    wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showSSStatus(msg) {
+    var el = document.getElementById("ss-status");
+    el.style.display = "block";
+    el.textContent = msg;
+    document.getElementById("ss-results-wrap").style.display = "none";
+}
 
 
 // -- BMW Dashboard Link Mode ------------------------------------------------
