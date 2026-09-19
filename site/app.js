@@ -62,6 +62,7 @@ async function init() {
 
         document.getElementById("loading").style.display = "none";
         render();
+        checkBmwMode();
     } catch (err) {
         document.getElementById("loading").style.display = "none";
         document.getElementById("error-banner").style.display = "block";
@@ -1111,6 +1112,125 @@ function renderRouteOnMap(found, from, to) {
     }
     
     map.fitBounds(bounds.pad(0.1));
+}
+
+
+
+
+// -- BMW Dashboard Link Mode ------------------------------------------------
+function checkBmwMode() {
+    var params = new URLSearchParams(window.location.search);
+    var lat = parseFloat(params.get('lat'));
+    var lng = parseFloat(params.get('lng'));
+    var fuel = params.get('fuel') || 'Gasolio';
+    var fromBmw = params.get('from') === 'bmw';
+    
+    if (!fromBmw || isNaN(lat) || isNaN(lng)) return;
+    
+    // Show BMW banner
+    var banner = document.createElement('div');
+    banner.id = 'bmw-banner';
+    banner.style.cssText = 'background:linear-gradient(90deg,rgba(63,140,255,0.15),rgba(100,231,139,0.1));border:1px solid rgba(63,140,255,0.3);border-radius:12px;padding:14px 20px;margin:16px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;';
+    banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="font-size:1.4em;">&#x1F697;</span>' +
+        '<div><strong style="color:#3f8cff;">BMW Dashboard</strong>' +
+        '<span style="color:#9fb2c7;font-size:0.85em;margin-left:8px;">Distributori ' + fuel + ' vicini alla tua posizione</span></div>' +
+        '</div>' +
+        '<a href="https://bmw.samuelecorona.it/fuel" style="color:#64e78b;font-size:0.85em;text-decoration:none;">Torna alla BMW Dashboard &rarr;</a>';
+    
+    var main = document.querySelector('main.container') || document.querySelector('main');
+    if (main && main.firstChild) {
+        main.insertBefore(banner, main.firstChild.nextSibling);
+    }
+    
+    // Center map on position
+    if (map) {
+        map.setView([lat, lng], 14);
+    }
+    
+    // Find and show nearby stations sorted by fuel price
+    if (STATIONS && STATIONS.length > 0) {
+        var nearby = [];
+        for (var i = 0; i < STATIONS.length; i++) {
+            var s = STATIONS[i];
+            if (!s.lat || !s.lng) continue;
+            var dist = haversine(lat, lng, s.lat, s.lng);
+            if (dist > 5) continue; // 5km radius
+            var price = null;
+            if (s.prezzi && s.prezzi[fuel]) {
+                price = s.prezzi[fuel].self || s.prezzi[fuel].servito || null;
+            }
+            if (price === null) continue;
+            nearby.push({ station: s, dist: dist, price: price });
+        }
+        nearby.sort(function(a, b) { return a.price - b.price; });
+        
+        // Show results panel
+        if (nearby.length > 0) {
+            showBmwResults(nearby, fuel, lat, lng);
+        }
+    }
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function showBmwResults(nearby, fuel, centerLat, centerLng) {
+    var section = document.createElement('section');
+    section.className = 'section';
+    section.id = 'bmw-results';
+    
+    var cheapest = nearby[0].price;
+    var mostExpensive = nearby[nearby.length - 1].price;
+    var savings50L = ((mostExpensive - cheapest) * 50).toFixed(2);
+    
+    var html = '<div class="section-header"><h2>&#9981; Distributori ' + fuel + ' vicini</h2>' +
+        '<span style="color:#64e78b;font-size:0.85em;">' + nearby.length + ' trovati nel raggio di 5km</span></div>';
+    
+    // Savings highlight
+    html += '<div style="background:rgba(100,231,139,0.1);border:1px solid rgba(100,231,139,0.25);border-radius:12px;padding:14px 18px;margin-bottom:16px;">' +
+        '<strong style="color:#64e78b;">Risparmio potenziale per pieno 50L: ' + savings50L + ' EUR</strong>' +
+        '<span style="color:#9fb2c7;font-size:0.82em;display:block;margin-top:4px;">' +
+        'Dal piu economico (' + cheapest.toFixed(3) + ' EUR/L) al piu caro (' + mostExpensive.toFixed(3) + ' EUR/L)</span></div>';
+    
+    // Table
+    html += '<div class="table-responsive"><table class="data-table"><thead><tr>' +
+        '<th>Distributore</th><th>Distanza</th><th>' + fuel + ' Self</th><th>vs Migliore</th>' +
+        '</tr></thead><tbody>';
+    
+    var maxShow = Math.min(nearby.length, 20);
+    for (var i = 0; i < maxShow; i++) {
+        var n = nearby[i];
+        var s = n.station;
+        var diff = n.price - cheapest;
+        var diffStr = diff < 0.001 ? 'Migliore!' : '+' + diff.toFixed(3) + ' EUR';
+        var diffClass = diff < 0.001 ? 'color:#64e78b;font-weight:700' : diff > 0.05 ? 'color:#ff6b6b' : 'color:#ffc65b';
+        var name = titleCase(s.bandiera || s.gestore || '');
+        var addr = titleCase(s.indirizzo || s.comune || '');
+        
+        html += '<tr><td><strong>' + name + '</strong><br><span style="color:#9fb2c7;font-size:0.78em;">' + addr + '</span></td>' +
+            '<td style="font-family:monospace;">' + n.dist.toFixed(1) + ' km</td>' +
+            '<td style="font-family:monospace;font-weight:700;">' + n.price.toFixed(3) + ' EUR</td>' +
+            '<td style="' + diffClass + '">' + diffStr + '</td></tr>';
+    }
+    
+    html += '</tbody></table></div>';
+    
+    section.innerHTML = html;
+    
+    // Insert after the BMW banner
+    var bmwBanner = document.getElementById('bmw-banner');
+    if (bmwBanner && bmwBanner.parentNode) {
+        bmwBanner.parentNode.insertBefore(section, bmwBanner.nextSibling);
+    }
 }
 
 
