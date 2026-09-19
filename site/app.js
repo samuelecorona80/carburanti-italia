@@ -1,12 +1,12 @@
 /**
- * Prezzi Carburanti Italia — Dashboard App
+ * Prezzi Carburanti Italia - Dashboard App
  * Carica dati JSON, renderizza card, chart, tabelle e ricerca.
  */
 
 (() => {
 "use strict";
 
-// ── State ──────────────────────────────────────────────────────────────────
+// -- State ------------------------------------------------------------------
 let DATA = null;
 let HISTORY = null;
 let STATIONS = null;
@@ -23,15 +23,15 @@ const FUEL_COLORS = {
 };
 
 const FUEL_EMOJI = {
-    Benzina: "🟢",
-    Gasolio: "🔵",
-    GPL: "🟡",
-    Metano: "🟣",
+    Benzina: "B",
+    Gasolio: "G",
+    GPL: "L",
+    Metano: "M",
 };
 
 const PROVINCE_TO_REGION = {};
 
-// ── Init ───────────────────────────────────────────────────────────────────
+// -- Init -------------------------------------------------------------------
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
 } else {
@@ -53,7 +53,7 @@ async function init() {
         HISTORY = historyRes.ok ? await historyRes.json() : [];
         STATIONS = stationsRes.ok ? await stationsRes.json() : [];
 
-        // Mappa province → regioni
+        // Mappa province -> regioni
         if (DATA.provinciale) {
             for (const [prov, info] of Object.entries(DATA.provinciale)) {
                 if (info.regione) PROVINCE_TO_REGION[prov] = info.regione;
@@ -81,7 +81,7 @@ function render() {
     initTrendButtons();
 }
 
-// ── Theme ──────────────────────────────────────────────────────────────────
+// -- Theme ------------------------------------------------------------------
 function initTheme() {
     const saved = localStorage.getItem("theme") || "light";
     document.documentElement.setAttribute("data-theme", saved);
@@ -98,15 +98,15 @@ function initTheme() {
 }
 
 function updateThemeButton(theme) {
-    document.getElementById("theme-toggle").textContent = theme === "light" ? "🌙" : "☀️";
+    document.getElementById("theme-toggle").textContent = theme === "light" ? "Moon" : "Sun";
 }
 
-// ── Header ─────────────────────────────────────────────────────────────────
+// -- Header -----------------------------------------------------------------
 function renderHeader() {
     const el = document.getElementById("last-update");
     if (DATA.data) {
         const d = DATA.data.split("-");
-        el.textContent = `📅 ${d[2]}/${d[1]}/${d[0]}`;
+        el.textContent = ` ${d[2]}/${d[1]}/${d[0]}`;
     }
 
     const banner = document.getElementById("stats-banner");
@@ -117,7 +117,7 @@ function renderHeader() {
         (DATA.totale_prezzi || 0).toLocaleString("it-IT");
 }
 
-// ── National Cards ─────────────────────────────────────────────────────────
+// -- National Cards ---------------------------------------------------------
 function renderCards() {
     const container = document.getElementById("cards-container");
     container.innerHTML = "";
@@ -129,28 +129,28 @@ function renderCards() {
         const delta = info.variazione_giorno;
         const deltaClass = delta > 0 ? "up" : delta < 0 ? "down" : "flat";
         const deltaStr = delta != null
-            ? `${delta > 0 ? "▲" : delta < 0 ? "▼" : "="} ${Math.abs(delta).toFixed(3)} €`
-            : "—";
+            ? `${delta > 0 ? "+" : delta < 0 ? "-" : "="} ${Math.abs(delta).toFixed(3)} EUR`
+            : "-";
 
         const weekDelta = info.variazione_settimana;
         const weekStr = weekDelta != null
-            ? `Settimana: ${weekDelta > 0 ? "+" : ""}${weekDelta.toFixed(3)} €`
+            ? `Settimana: ${weekDelta > 0 ? "+" : ""}${weekDelta.toFixed(3)} EUR`
             : "";
 
         const card = document.createElement("div");
         card.className = `card card-fuel-${fuel.toLowerCase()}`;
         card.innerHTML = `
             <div class="card-label">${FUEL_EMOJI[fuel]} ${fuel}</div>
-            <div class="card-price">${info.media?.toFixed(3) ?? "—"} <span class="unit">€/L</span></div>
+            <div class="card-price">${info.media?.toFixed(3) ?? "-"} <span class="unit">EUR/L</span></div>
             <div class="card-delta ${deltaClass}">${deltaStr}</div>
-            <div class="card-range">Min ${info.min?.toFixed(3) ?? "—"} · Max ${info.max?.toFixed(3) ?? "—"} · ${info.num_impianti ?? 0} impianti</div>
+            <div class="card-range">Min ${info.min?.toFixed(3) ?? "-"} - Max ${info.max?.toFixed(3) ?? "-"} - ${info.num_impianti ?? 0} impianti</div>
             ${weekStr ? `<div class="card-range">${weekStr}</div>` : ""}
         `;
         container.appendChild(card);
     }
 }
 
-// ── Trend Chart ────────────────────────────────────────────────────────────
+// -- Trend Chart ------------------------------------------------------------
 function renderTrendChart() {
     if (!HISTORY || HISTORY.length === 0) return;
 
@@ -195,7 +195,7 @@ function renderTrendChart() {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: item => `${item.dataset.label}: ${item.parsed.y?.toFixed(3)} €/L`,
+                        label: item => `${item.dataset.label}: ${item.parsed.y?.toFixed(3)} EUR/L`,
                     },
                 },
             },
@@ -208,7 +208,7 @@ function renderTrendChart() {
                     grid: { color: "rgba(74, 112, 148, 0.15)" },
                     ticks: {
                         color: "#9fb2c7",
-                        callback: v => v.toFixed(2) + " €",
+                        callback: v => v.toFixed(2) + " EUR",
                     },
                 },
             },
@@ -236,7 +236,7 @@ function initTrendButtons() {
     });
 }
 
-// ── Regional Table ─────────────────────────────────────────────────────────
+// -- Regional Table ---------------------------------------------------------
 function renderRegionalTable() {
     if (!DATA.regionale) return;
 
@@ -280,7 +280,7 @@ function renderRows(rows) {
         </tr>
     `).join("");
 
-    // Click → drill-down
+    // Click -> drill-down
     tbody.querySelectorAll("tr").forEach(tr => {
         tr.addEventListener("click", () => showProvinces(tr.dataset.region));
     });
@@ -301,7 +301,7 @@ function initSort(rows) {
     });
 }
 
-// ── Province Drill-down ────────────────────────────────────────────────────
+// -- Province Drill-down ----------------------------------------------------
 function showProvinces(regionName) {
     const section = document.getElementById("province-section");
     const title = document.getElementById("province-title");
@@ -339,7 +339,7 @@ function showProvinces(regionName) {
     };
 }
 
-// ── Search ─────────────────────────────────────────────────────────────────
+// -- Search -----------------------------------------------------------------
 function initSearch() {
     if (!DATA.comunali) return;
 
@@ -419,7 +419,7 @@ function selectComune(name) {
     const detail = document.getElementById("comune-detail");
     detail.style.display = "block";
 
-    let html = `<h3>📍 ${name} <small style="color:var(--text-muted)">(${info.provincia}${info.cap ? " — " + info.cap : ""})</small></h3>`;
+    let html = `<h3>[pin] ${name} <small style="color:var(--text-muted)">(${info.provincia}${info.cap ? " - " + info.cap : ""})</small></h3>`;
     html += `<div class="comune-grid">`;
 
     for (const fuel of ["Benzina", "Gasolio", "GPL", "Metano"]) {
@@ -431,13 +431,13 @@ function selectComune(name) {
             const diff = local - national;
             const pct = ((diff / national) * 100).toFixed(1);
             const cls = diff < 0 ? "better" : diff > 0 ? "worse" : "";
-            vsHtml = `vs media nazionale: <span class="${cls}">${diff > 0 ? "+" : ""}${diff.toFixed(3)} € (${diff > 0 ? "+" : ""}${pct}%)</span>`;
+            vsHtml = `vs media nazionale: <span class="${cls}">${diff > 0 ? "+" : ""}${diff.toFixed(3)} EUR (${diff > 0 ? "+" : ""}${pct}%)</span>`;
         }
 
         html += `
             <div class="comune-fuel-card">
                 <div class="comune-fuel-label">${FUEL_EMOJI[fuel]} ${fuel}</div>
-                <div class="comune-fuel-price">${local != null ? local.toFixed(3) + " €" : "n/d"}</div>
+                <div class="comune-fuel-price">${local != null ? local.toFixed(3) + " EUR" : "n/d"}</div>
                 <div class="comune-fuel-vs">${vsHtml}</div>
             </div>
         `;
@@ -448,22 +448,23 @@ function selectComune(name) {
     detail.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 function fmtPrice(v) {
-    return v != null ? v.toFixed(3) + " €" : "—";
+    return v != null ? v.toFixed(3) + " EUR" : "-";
 }
 
 function fmtDelta(v) {
-    if (v == null) return "—";
-    const sign = v > 0 ? "▲" : v < 0 ? "▼" : "=";
+    if (v == null) return "-";
+    const sign = v > 0 ? "+" : v < 0 ? "-" : "=";
     return `${sign} ${Math.abs(v).toFixed(3)}`;
 }
 
 function deltaClass(v) {
     if (v == null) return "delta-cell flat";
     return `delta-cell ${v > 0 ? "up" : v < 0 ? "down" : "flat"}`;
+}
 
-// ── Map ────────────────────────────────────────────────────────────────────
+// -- Map --------------------------------------------------------------------
 
 function initMap() {
     if (!STATIONS || STATIONS.length === 0) {
@@ -474,7 +475,7 @@ function initMap() {
     // Default center: Italy
     map = L.map("map").setView([41.9, 12.5], 6);
 
-    // Tile layer — detect theme
+    // Tile layer - detect theme
     const tileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
     const tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
@@ -492,7 +493,7 @@ function initMap() {
         // Only show markers at zoom >= 11 (city level)
         if (zoom < 11) {
             document.getElementById("map-hint").textContent =
-                "🔍 Zooma o cerca una città per vedere i distributori";
+                " Zooma o cerca una citt? per vedere i distributori";
             return;
         }
 
@@ -537,7 +538,7 @@ function initMap() {
         }
 
         document.getElementById("map-hint").textContent =
-            `${count} distributori visibili${count >= 200 ? " (max 200, zooma per vedere di più)" : ""}. Clicca su un punto per i dettagli.`;
+            `${count} distributori visibili${count >= 200 ? " (max 200, zooma per vedere di pi?)" : ""}. Clicca su un punto per i dettagli.`;
     }
 
     map.on("moveend", updateMarkers);
@@ -549,7 +550,7 @@ function initMap() {
             alert("Geolocalizzazione non supportata dal browser");
             return;
         }
-        document.getElementById("geolocate-btn").textContent = "⏳ Ricerca...";
+        document.getElementById("geolocate-btn").textContent = "? Ricerca...";
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -569,13 +570,13 @@ function initMap() {
                         iconSize: [20, 20],
                         iconAnchor: [10, 10],
                     }),
-                }).addTo(map).bindPopup("📍 La tua posizione").openPopup();
+                }).addTo(map).bindPopup("[pin] La tua posizione").openPopup();
 
-                document.getElementById("geolocate-btn").textContent = "📍 Posizione";
+                document.getElementById("geolocate-btn").textContent = "[pin] Posizione";
             },
             (err) => {
                 alert("Impossibile ottenere la posizione: " + err.message);
-                document.getElementById("geolocate-btn").textContent = "📍 Posizione";
+                document.getElementById("geolocate-btn").textContent = "[pin] Posizione";
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -630,7 +631,7 @@ function buildStationPopup(station, isFav) {
         pricesHtml += `
             <div class="popup-fuel">
                 ${FUEL_EMOJI[fuel] || ""} ${fuel}<br>
-                <strong>${price.toFixed(3)} €</strong>
+                <strong>${price.toFixed(3)} EUR</strong>
                 ${vsHtml}
             </div>
         `;
@@ -643,7 +644,7 @@ function buildStationPopup(station, isFav) {
             <div class="popup-prices">${pricesHtml}</div>
             <div class="popup-actions">
                 <button class="popup-fav-btn" onclick="window._toggleMapFav(${station.id})">
-                    ${isFav ? "⭐ Rimuovi preferito" : "☆ Aggiungi ai preferiti"}
+                    ${isFav ? "[star] Rimuovi preferito" : "[star] Aggiungi ai preferiti"}
                 </button>
             </div>
         </div>
@@ -656,7 +657,7 @@ window._toggleMapFav = function(stationId) {
     map.closePopup();
 };
 
-// ── Favorites ──────────────────────────────────────────────────────────────
+// -- Favorites --------------------------------------------------------------
 
 function getFavorites() {
     try { return JSON.parse(localStorage.getItem("fav_stations") || "[]"); }
@@ -713,15 +714,15 @@ function initFavorites() {
         container.innerHTML = matches.map(s => {
             const isFav = favIds.includes(s.id);
             const benzSelf = s.prezzi?.Benzina?.self;
-            const priceStr = benzSelf != null ? `${benzSelf.toFixed(3)} €/L` : "";
+            const priceStr = benzSelf != null ? `${benzSelf.toFixed(3)} EUR/L` : "";
             return `
                 <div class="station-result" data-id="${s.id}">
                     <div class="station-result-info">
-                        <div class="station-result-name">${s.bandiera || s.gestore} — ${s.nome || ""}</div>
+                        <div class="station-result-name">${s.bandiera || s.gestore} - ${s.nome || ""}</div>
                         <div class="station-result-addr">${s.indirizzo || ""}</div>
                     </div>
                     <div class="station-result-price">${priceStr}</div>
-                    <button class="star-btn" data-id="${s.id}" title="${isFav ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}">${isFav ? "⭐" : "☆"}</button>
+                    <button class="star-btn" data-id="${s.id}" title="${isFav ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}">${isFav ? "[star]" : "[star]"}</button>
                 </div>
             `;
         }).join("");
@@ -797,7 +798,7 @@ function renderFavorites() {
             pricesHtml += `
                 <div class="fav-fuel">
                     <div class="fav-fuel-label">${FUEL_EMOJI[fuel] || ""} ${fuel}</div>
-                    <div class="fav-fuel-price">${stPrice.toFixed(3)} €</div>
+                    <div class="fav-fuel-price">${stPrice.toFixed(3)} EUR</div>
                     <div class="fav-fuel-vs">${vsHtml}</div>
                 </div>
             `;
@@ -809,20 +810,20 @@ function renderFavorites() {
         const benzAvg = DATA.nazionale?.Benzina?.self?.media;
         if (benz != null && benzAvg != null) {
             const diff = benz - benzAvg;
-            if (diff < -0.02) badge = `<span class="fav-badge cheap">💰 Conveniente</span>`;
-            else if (diff > 0.02) badge = `<span class="fav-badge expensive">📈 Sopra media</span>`;
-            else badge = `<span class="fav-badge average">≈ In media</span>`;
+            if (diff < -0.02) badge = `<span class="fav-badge cheap">[save] Conveniente</span>`;
+            else if (diff > 0.02) badge = `<span class="fav-badge expensive">[up] Sopra media</span>`;
+            else badge = `<span class="fav-badge average">~ In media</span>`;
         }
 
         return `
             <div class="fav-card">
                 <div class="fav-card-header">
                     <div class="fav-card-info">
-                        <h4>${s.bandiera || s.gestore} — ${s.nome || ""}</h4>
+                        <h4>${s.bandiera || s.gestore} - ${s.nome || ""}</h4>
                         <div class="fav-address">${s.indirizzo || ""}</div>
                         ${badge}
                     </div>
-                    <button class="fav-remove" data-id="${s.id}" title="Rimuovi">🗑️</button>
+                    <button class="fav-remove" data-id="${s.id}" title="Rimuovi">[x]</button>
                 </div>
                 <div class="fav-prices">${pricesHtml}</div>
             </div>
