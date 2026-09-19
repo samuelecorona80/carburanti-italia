@@ -476,8 +476,8 @@ function initMap() {
     map = L.map("map").setView([41.9, 12.5], 6);
 
     // Tile layer - detect theme
-    const tileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-    const tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+    const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
     L.tileLayer(tileUrl, { attribution: tileAttr, maxZoom: 18 }).addTo(map);
 
