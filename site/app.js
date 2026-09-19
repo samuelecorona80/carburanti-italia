@@ -78,6 +78,8 @@ function render() {
     initSearch();
     initFavorites();
     initMap();
+    initZone();
+    initRoute();
     initTrendButtons();
 }
 
@@ -371,8 +373,8 @@ function initSearch() {
 
         dropdown.innerHTML = matches.map((c, i) =>
             `<div class="search-item" data-comune="${c.name}" data-index="${i}">
-                <span>${c.name}</span>
-                <span class="prov">${c.prov} ${c.cap}</span>
+                <span>${titleCase(c.name)}</span>
+                <span class="prov">${c.prov} ${c.cap || ""}</span>
             </div>`
         ).join("");
 
@@ -411,7 +413,8 @@ function initSearch() {
 
 function selectComune(name) {
     document.getElementById("search-results").classList.remove("open");
-    document.getElementById("search-input").value = name;
+    document.getElementById("search-input").value = titleCase(name);
+    setZone(name, info.provincia);
 
     const info = DATA.comunali?.[name];
     if (!info) return;
@@ -419,7 +422,7 @@ function selectComune(name) {
     const detail = document.getElementById("comune-detail");
     detail.style.display = "block";
 
-    let html = `<h3>[pin] ${name} <small style="color:var(--text-muted)">(${info.provincia}${info.cap ? " - " + info.cap : ""})</small></h3>`;
+    let html = `<h3>[pin] ${titleCase(name)} <small style="color:var(--text-muted)">(${info.provincia}${info.cap ? " - " + info.cap : ""})</small></h3>`;
     html += `<div class="comune-grid">`;
 
     for (const fuel of ["Benzina", "Gasolio", "GPL", "Metano"]) {
@@ -449,6 +452,13 @@ function selectComune(name) {
 }
 
 // -- Helpers ----------------------------------------------------------------
+
+function titleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
+var selectedZone = null;
 function fmtPrice(v) {
     return v != null ? v.toFixed(3) + " EUR" : "-";
 }
@@ -718,7 +728,7 @@ function initFavorites() {
             return `
                 <div class="station-result" data-id="${s.id}">
                     <div class="station-result-info">
-                        <div class="station-result-name">${s.bandiera || s.gestore} - ${s.nome || ""}</div>
+                        <div class="station-result-name">${s.bandiera || s.gestore} - ${titleCase(s.nome || "")}</div>
                         <div class="station-result-addr">${s.indirizzo || ""}</div>
                     </div>
                     <div class="station-result-price">${priceStr}</div>
@@ -819,7 +829,7 @@ function renderFavorites() {
             <div class="fav-card">
                 <div class="fav-card-header">
                     <div class="fav-card-info">
-                        <h4>${s.bandiera || s.gestore} - ${s.nome || ""}</h4>
+                        <h4>${s.bandiera || s.gestore} - ${titleCase(s.nome || "")}</h4>
                         <div class="fav-address">${s.indirizzo || ""}</div>
                         ${badge}
                     </div>
@@ -837,5 +847,271 @@ function renderFavorites() {
         });
     });
 }
+
+
+// -- Zone Selection ---------------------------------------------------------
+
+function setZone(comuneName, provincia) {
+    selectedZone = { comune: comuneName, provincia: provincia };
+    var banner = document.getElementById("zone-banner");
+    var bannerText = document.getElementById("zone-banner-text");
+    banner.style.display = "flex";
+    bannerText.textContent = "Stai guardando: " + titleCase(comuneName) + " (" + (provincia || "") + ")";
+    
+    // Center map on zone
+    if (map && STATIONS) {
+        var zoneStations = STATIONS.filter(function(s) {
+            return s.comune && s.comune.toLowerCase() === comuneName.toLowerCase();
+        });
+        if (zoneStations.length > 0 && zoneStations[0].lat) {
+            map.setView([zoneStations[0].lat, zoneStations[0].lng], 13);
+        }
+    }
+    
+    localStorage.setItem("selected_zone", JSON.stringify(selectedZone));
+}
+
+function resetZone() {
+    selectedZone = null;
+    document.getElementById("zone-banner").style.display = "none";
+    localStorage.removeItem("selected_zone");
+}
+
+function initZone() {
+    // Restore saved zone
+    try {
+        var saved = JSON.parse(localStorage.getItem("selected_zone"));
+        if (saved && saved.comune && DATA.comunali && DATA.comunali[saved.comune]) {
+            setZone(saved.comune, saved.provincia);
+        }
+    } catch(e) {}
+    
+    // Reset button
+    document.getElementById("zone-banner-reset").addEventListener("click", resetZone);
+}
+
+// -- Route Casa-Lavoro ------------------------------------------------------
+
+function initRoute() {
+    // Restore saved route
+    try {
+        var saved = JSON.parse(localStorage.getItem("route_config"));
+        if (saved) {
+            document.getElementById("route-from").value = saved.from || "";
+            document.getElementById("route-to").value = saved.to || "";
+        }
+    } catch(e) {}
+    
+    document.getElementById("route-go").addEventListener("click", calculateRoute);
+    
+    // Enter key on inputs
+    document.getElementById("route-from").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") calculateRoute();
+    });
+    document.getElementById("route-to").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") calculateRoute();
+    });
+}
+
+function calculateRoute() {
+    var fromInput = document.getElementById("route-from").value.trim();
+    var toInput = document.getElementById("route-to").value.trim();
+    
+    if (!fromInput || !toInput) {
+        showRouteStatus("Inserisci sia partenza che arrivo");
+        return;
+    }
+    
+    // Save config
+    localStorage.setItem("route_config", JSON.stringify({from: fromInput, to: toInput}));
+    
+    showRouteStatus("Ricerca in corso...");
+    document.getElementById("route-results").style.display = "none";
+    document.getElementById("route-savings").style.display = "none";
+    
+    // Geocode both addresses
+    Promise.all([
+        geocode(fromInput),
+        geocode(toInput)
+    ]).then(function(results) {
+        var fromCoord = results[0];
+        var toCoord = results[1];
+        
+        if (!fromCoord) {
+            showRouteStatus("Partenza non trovata: " + fromInput);
+            return;
+        }
+        if (!toCoord) {
+            showRouteStatus("Arrivo non trovato: " + toInput);
+            return;
+        }
+        
+        findStationsAlongRoute(fromCoord, toCoord, fromInput, toInput);
+    }).catch(function(err) {
+        showRouteStatus("Errore nella ricerca: " + err.message);
+    });
+}
+
+function geocode(query) {
+    return fetch(
+        "https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(query + ", Italia") + "&format=json&limit=1",
+        { headers: { "Accept-Language": "it" } }
+    )
+    .then(function(r) { return r.json(); })
+    .then(function(results) {
+        if (results.length === 0) return null;
+        return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon), name: results[0].display_name };
+    });
+}
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+    var dx = bx - ax;
+    var dy = by - ay;
+    var lenSq = dx * dx + dy * dy;
+    var t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
+    var projX = ax + t * dx;
+    var projY = ay + t * dy;
+    return distanceKm(px, py, projX, projY);
+}
+
+function findStationsAlongRoute(from, to, fromName, toName) {
+    if (!STATIONS || STATIONS.length === 0) {
+        showRouteStatus("Dati distributori non disponibili");
+        return;
+    }
+    
+    var maxDistKm = 3; // Max distance from route line
+    var routeDistKm = distanceKm(from.lat, from.lng, to.lat, to.lng);
+    
+    var found = [];
+    for (var i = 0; i < STATIONS.length; i++) {
+        var s = STATIONS[i];
+        if (!s.lat || !s.lng) continue;
+        
+        var distFromRoute = pointToSegmentDistance(s.lat, s.lng, from.lat, from.lng, to.lat, to.lng);
+        if (distFromRoute > maxDistKm) continue;
+        
+        var distFromStart = distanceKm(from.lat, from.lng, s.lat, s.lng);
+        var benzSelf = s.prezzi && s.prezzi.Benzina ? s.prezzi.Benzina.self : null;
+        var gasSelf = s.prezzi && s.prezzi.Gasolio ? s.prezzi.Gasolio.self : null;
+        
+        if (benzSelf == null && gasSelf == null) continue;
+        
+        found.push({
+            station: s,
+            distFromRoute: distFromRoute,
+            distFromStart: distFromStart,
+            benzSelf: benzSelf,
+            gasSelf: gasSelf
+        });
+    }
+    
+    // Sort by distance from start
+    found.sort(function(a, b) { return a.distFromStart - b.distFromStart; });
+    
+    if (found.length === 0) {
+        showRouteStatus("Nessun distributore trovato lungo la tratta " + fromName + " -> " + toName + " (raggio " + maxDistKm + "km). Prova con nomi piu specifici.");
+        return;
+    }
+    
+    showRouteStatus("Tratta: " + titleCase(fromName) + " -> " + titleCase(toName) + " (" + routeDistKm.toFixed(1) + " km) - " + found.length + " distributori trovati");
+    
+    renderRouteResults(found, from, to);
+    renderRouteSavings(found);
+    renderRouteOnMap(found, from, to);
+}
+
+function showRouteStatus(msg) {
+    var el = document.getElementById("route-status");
+    el.style.display = "block";
+    el.textContent = msg;
+}
+
+function renderRouteResults(found, from, to) {
+    var container = document.getElementById("route-results");
+    container.style.display = "block";
+    
+    var benzPrices = found.filter(function(f) { return f.benzSelf != null; }).map(function(f) { return f.benzSelf; });
+    var minBenz = benzPrices.length > 0 ? Math.min.apply(null, benzPrices) : null;
+    var maxBenz = benzPrices.length > 0 ? Math.max.apply(null, benzPrices) : null;
+    
+    var html = '<table class="data-table"><thead><tr>';
+    html += '<th>Distributore</th>';
+    html += '<th>Dist.</th>';
+    html += '<th>Benzina Self</th>';
+    html += '<th>Gasolio Self</th>';
+    html += '<th></th>';
+    html += '</tr></thead><tbody>';
+    
+    for (var i = 0; i < Math.min(found.length, 50); i++) {
+        var f = found[i];
+        var s = f.station;
+        var badge = '';
+        if (f.benzSelf != null && f.benzSelf === minBenz) {
+            badge = '<span class="route-badge cheapest">Piu economico</span>';
+        } else if (f.benzSelf != null && f.benzSelf === maxBenz && found.length > 2) {
+            badge = '<span class="route-badge priciest">Piu caro</span>';
+        }
+        
+        html += '<tr>';
+        html += '<td><strong>' + (s.bandiera || s.gestore || '') + '</strong><br><span class="dist-km">' + titleCase(s.indirizzo || '') + '</span></td>';
+        html += '<td class="dist-km">' + f.distFromStart.toFixed(1) + ' km</td>';
+        html += '<td class="price-cell">' + (f.benzSelf != null ? f.benzSelf.toFixed(3) + ' EUR' : '-') + '</td>';
+        html += '<td class="price-cell">' + (f.gasSelf != null ? f.gasSelf.toFixed(3) + ' EUR' : '-') + '</td>';
+        html += '<td>' + badge + '</td>';
+        html += '</tr>';
+    }
+    
+    html += '</tbody></table>';
+    container.querySelector('.table-responsive').innerHTML = html;
+}
+
+function renderRouteSavings(found) {
+    var benzPrices = found.filter(function(f) { return f.benzSelf != null; });
+    if (benzPrices.length < 2) return;
+    
+    benzPrices.sort(function(a, b) { return a.benzSelf - b.benzSelf; });
+    var cheapest = benzPrices[0];
+    var priciest = benzPrices[benzPrices.length - 1];
+    var diff = priciest.benzSelf - cheapest.benzSelf;
+    var saving50L = (diff * 50).toFixed(2);
+    
+    if (diff < 0.005) return;
+    
+    var el = document.getElementById("route-savings");
+    el.style.display = "block";
+    el.innerHTML = '<div>Risparmio stimato per pieno 50L: <span class="saving-amount">' + saving50L + ' EUR</span></div>' +
+        '<div class="saving-detail">Rifornendo da ' + (cheapest.station.bandiera || '') + ' (' + cheapest.benzSelf.toFixed(3) + ' EUR/L) invece che ' + 
+        (priciest.station.bandiera || '') + ' (' + priciest.benzSelf.toFixed(3) + ' EUR/L)</div>';
+}
+
+function renderRouteOnMap(found, from, to) {
+    if (!map) return;
+    
+    // Fit bounds to show full route
+    var bounds = L.latLngBounds([
+        [from.lat, from.lng],
+        [to.lat, to.lng]
+    ]);
+    
+    for (var i = 0; i < found.length; i++) {
+        if (found[i].station.lat) {
+            bounds.extend([found[i].station.lat, found[i].station.lng]);
+        }
+    }
+    
+    map.fitBounds(bounds.pad(0.1));
+}
+
 
 })();
