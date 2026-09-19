@@ -45,6 +45,12 @@
             <span>💰 <strong id="stat-prezzi">0</strong> prezzi rilevati</span>
         </div>
 
+        <!-- Zone banner -->
+        <div id="zone-banner" class="zone-banner" style="display:none">
+            <span id="zone-banner-text"></span>
+            <button id="zone-banner-reset" class="btn-sm">X Resetta</button>
+        </div>
+
         <!-- Sezione 1: Card nazionali -->
         <section id="national-cards" class="section">
             <h2>📊 Panoramica Nazionale <small>(self-service)</small></h2>
@@ -92,6 +98,30 @@
                 <div id="map" style="width:100%; height:100%;"></div>
             </div>
             <p class="hint" id="map-hint">Clicca su un distributore per vedere prezzi e dettagli. I tuoi preferiti sono evidenziati con ⭐</p>
+        </section>
+
+        <!-- Sezione Tratta Casa-Lavoro -->
+        <section class="section" id="route-section">
+            <h2>&#x1F6E3; Tratta Casa-Lavoro</h2>
+            <p class="hint">Inserisci partenza e arrivo per trovare i distributori lungo il percorso e stimare il risparmio</p>
+            <div class="route-inputs">
+                <div class="route-field">
+                    <label>Partenza</label>
+                    <input type="text" id="route-from" placeholder="Es. San Sperate, Cagliari..." autocomplete="off">
+                </div>
+                <div class="route-field">
+                    <label>Arrivo</label>
+                    <input type="text" id="route-to" placeholder="Es. Cagliari, Milano..." autocomplete="off">
+                </div>
+                <button class="btn-sm route-go-btn" id="route-go">Cerca distributori</button>
+            </div>
+            <div id="route-status" class="route-status" style="display:none"></div>
+            <div id="route-savings" class="route-savings" style="display:none"></div>
+            <div id="route-results" class="route-results" style="display:none">
+                <div class="table-responsive">
+                    <table class="data-table" id="route-table"></table>
+                </div>
+            </div>
         </section>
 
         <!-- Sezione 2: Grafico trend -->
