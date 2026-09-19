@@ -9,8 +9,10 @@
 // ── State ──────────────────────────────────────────────────────────────────
 let DATA = null;
 let HISTORY = null;
+let STATIONS = null;
 let trendChart = null;
 let currentSort = { col: "name", asc: true };
+let map = null;
 let trendDays = 60;
 
 const FUEL_COLORS = {
@@ -35,14 +37,16 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
     initTheme();
     try {
-        const [latestRes, historyRes] = await Promise.all([
+        const [latestRes, historyRes, stationsRes] = await Promise.all([
             fetch("data/latest.json"),
             fetch("data/history.json"),
+            fetch("data/stations.json"),
         ]);
 
         if (!latestRes.ok) throw new Error("latest.json non trovato");
         DATA = await latestRes.json();
         HISTORY = historyRes.ok ? await historyRes.json() : [];
+        STATIONS = stationsRes.ok ? await stationsRes.json() : [];
 
         // Mappa province → regioni
         if (DATA.provinciale) {
@@ -67,6 +71,8 @@ function render() {
     renderTrendChart();
     renderRegionalTable();
     initSearch();
+    initFavorites();
+    initMap();
     initTrendButtons();
 }
 
@@ -452,6 +458,384 @@ function fmtDelta(v) {
 function deltaClass(v) {
     if (v == null) return "delta-cell flat";
     return `delta-cell ${v > 0 ? "up" : v < 0 ? "down" : "flat"}`;
+
+// ── Map ────────────────────────────────────────────────────────────────────
+
+function initMap() {
+    if (!STATIONS || STATIONS.length === 0) {
+        document.getElementById("map-section").style.display = "none";
+        return;
+    }
+
+    // Default center: Italy
+    map = L.map("map").setView([41.9, 12.5], 6);
+
+    // Tile layer — detect theme
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const tileUrl = isDark
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const tileAttr = isDark
+        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+    L.tileLayer(tileUrl, { attribution: tileAttr, maxZoom: 18 }).addTo(map);
+
+    // Cluster-like approach: only show markers when zoomed in enough
+    let markersLayer = L.layerGroup().addTo(map);
+    let userMarker = null;
+
+    function updateMarkers() {
+        markersLayer.clearLayers();
+        const bounds = map.getBounds();
+        const zoom = map.getZoom();
+
+        // Only show markers at zoom >= 11 (city level)
+        if (zoom < 11) {
+            document.getElementById("map-hint").textContent =
+                "🔍 Zooma o cerca una città per vedere i distributori";
+            return;
+        }
+
+        const favIds = getFavorites();
+        let count = 0;
+
+        for (const s of STATIONS) {
+            if (!s.lat || !s.lng) continue;
+            if (!bounds.contains([s.lat, s.lng])) continue;
+            if (count >= 200) break; // Cap per performance
+
+            const isFav = favIds.includes(s.id);
+            const benzSelf = s.prezzi?.Benzina?.self;
+
+            // Colore marker basato su prezzo benzina
+            let color = "#3b82f6"; // blue default
+            if (benzSelf != null) {
+                const avg = DATA.nazionale?.Benzina?.self?.media || 1.78;
+                if (benzSelf < avg - 0.03) color = "#10b981"; // green = cheap
+                else if (benzSelf > avg + 0.03) color = "#ef4444"; // red = expensive
+                else color = "#f59e0b"; // yellow = average
+            }
+
+            const icon = L.divIcon({
+                className: "custom-marker",
+                html: `<div style="
+                    width:${isFav ? 16 : 12}px;
+                    height:${isFav ? 16 : 12}px;
+                    background:${color};
+                    border:2px solid white;
+                    border-radius:50%;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.3);
+                    ${isFav ? "box-shadow:0 0 0 3px gold, 0 1px 4px rgba(0,0,0,0.3);" : ""}
+                "></div>`,
+                iconSize: [isFav ? 16 : 12, isFav ? 16 : 12],
+                iconAnchor: [isFav ? 8 : 6, isFav ? 8 : 6],
+            });
+
+            const marker = L.marker([s.lat, s.lng], { icon }).addTo(markersLayer);
+            marker.bindPopup(() => buildStationPopup(s, isFav), { maxWidth: 280 });
+            count++;
+        }
+
+        document.getElementById("map-hint").textContent =
+            `${count} distributori visibili${count >= 200 ? " (max 200, zooma per vedere di più)" : ""}. Clicca su un punto per i dettagli.`;
+    }
+
+    map.on("moveend", updateMarkers);
+    map.on("zoomend", updateMarkers);
+
+    // Geolocation
+    document.getElementById("geolocate-btn").addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            alert("Geolocalizzazione non supportata dal browser");
+            return;
+        }
+        document.getElementById("geolocate-btn").textContent = "⏳ Ricerca...";
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                map.setView([latitude, longitude], 14);
+
+                if (userMarker) map.removeLayer(userMarker);
+                userMarker = L.marker([latitude, longitude], {
+                    icon: L.divIcon({
+                        className: "user-marker",
+                        html: `<div style="
+                            width:20px; height:20px;
+                            background:#3b82f6;
+                            border:3px solid white;
+                            border-radius:50%;
+                            box-shadow:0 0 0 6px rgba(59,130,246,0.3), 0 2px 6px rgba(0,0,0,0.3);
+                        "></div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10],
+                    }),
+                }).addTo(map).bindPopup("📍 La tua posizione").openPopup();
+
+                document.getElementById("geolocate-btn").textContent = "📍 Posizione";
+            },
+            (err) => {
+                alert("Impossibile ottenere la posizione: " + err.message);
+                document.getElementById("geolocate-btn").textContent = "📍 Posizione";
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+
+    // Map search (geocoding via Nominatim)
+    let searchTimeout = null;
+    document.getElementById("map-search-input").addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        const q = e.target.value.trim();
+        if (q.length < 3) return;
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ", Italia")}&format=json&limit=1`,
+                    { headers: { "Accept-Language": "it" } }
+                );
+                const results = await res.json();
+                if (results.length > 0) {
+                    const { lat, lon } = results[0];
+                    map.setView([parseFloat(lat), parseFloat(lon)], 13);
+                }
+            } catch (err) {
+                console.warn("Geocoding error:", err);
+            }
+        }, 500);
+    });
+
+    document.getElementById("map-search-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.target.dispatchEvent(new Event("input"));
+        }
+    });
+}
+
+function buildStationPopup(station, isFav) {
+    let pricesHtml = "";
+    for (const fuel of ["Benzina", "Gasolio", "GPL", "Metano"]) {
+        const price = station.prezzi?.[fuel]?.self;
+        if (price == null) continue;
+
+        const avg = DATA.nazionale?.[fuel]?.self?.media;
+        let vsHtml = "";
+        if (avg) {
+            const diff = price - avg;
+            const cls = diff < -0.005 ? "better" : diff > 0.005 ? "worse" : "";
+            vsHtml = `<div class="popup-vs"><span class="${cls}">${diff > 0 ? "+" : ""}${diff.toFixed(3)}</span> vs media</div>`;
+        }
+
+        pricesHtml += `
+            <div class="popup-fuel">
+                ${FUEL_EMOJI[fuel] || ""} ${fuel}<br>
+                <strong>${price.toFixed(3)} €</strong>
+                ${vsHtml}
+            </div>
+        `;
+    }
+
+    return `
+        <div class="station-popup">
+            <h4>${station.bandiera || station.gestore}</h4>
+            <div class="popup-addr">${station.indirizzo || ""}</div>
+            <div class="popup-prices">${pricesHtml}</div>
+            <div class="popup-actions">
+                <button class="popup-fav-btn" onclick="window._toggleMapFav(${station.id})">
+                    ${isFav ? "⭐ Rimuovi preferito" : "☆ Aggiungi ai preferiti"}
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Global handler for popup favorite button
+window._toggleMapFav = function(stationId) {
+    toggleFavorite(stationId);
+    map.closePopup();
+};
+
+// ── Favorites ──────────────────────────────────────────────────────────────
+
+function getFavorites() {
+    try { return JSON.parse(localStorage.getItem("fav_stations") || "[]"); }
+    catch { return []; }
+}
+
+function saveFavorites(ids) {
+    localStorage.setItem("fav_stations", JSON.stringify(ids));
+}
+
+function initFavorites() {
+    renderFavorites();
+
+    // Open modal
+    document.getElementById("add-fav-btn").addEventListener("click", () => {
+        document.getElementById("fav-modal").style.display = "flex";
+        document.getElementById("station-search-input").value = "";
+        document.getElementById("station-search-results").innerHTML = "";
+        setTimeout(() => document.getElementById("station-search-input").focus(), 100);
+    });
+
+    // Close modal
+    document.getElementById("fav-modal-close").addEventListener("click", closeFavModal);
+    document.getElementById("fav-modal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("fav-modal")) closeFavModal();
+    });
+
+    // Search stations
+    document.getElementById("station-search-input").addEventListener("input", (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        if (q.length < 2 || !STATIONS) {
+            document.getElementById("station-search-results").innerHTML = "";
+            return;
+        }
+
+        const favIds = getFavorites();
+        const matches = STATIONS
+            .filter(s =>
+                s.nome?.toLowerCase().includes(q) ||
+                s.gestore?.toLowerCase().includes(q) ||
+                s.indirizzo?.toLowerCase().includes(q) ||
+                s.comune?.toLowerCase().includes(q) ||
+                s.bandiera?.toLowerCase().includes(q) ||
+                String(s.id).includes(q)
+            )
+            .slice(0, 15);
+
+        const container = document.getElementById("station-search-results");
+        if (matches.length === 0) {
+            container.innerHTML = `<p style="padding:16px;color:var(--text-muted);text-align:center">Nessun risultato</p>`;
+            return;
+        }
+
+        container.innerHTML = matches.map(s => {
+            const isFav = favIds.includes(s.id);
+            const benzSelf = s.prezzi?.Benzina?.self;
+            const priceStr = benzSelf != null ? `${benzSelf.toFixed(3)} €/L` : "";
+            return `
+                <div class="station-result" data-id="${s.id}">
+                    <div class="station-result-info">
+                        <div class="station-result-name">${s.bandiera || s.gestore} — ${s.nome || ""}</div>
+                        <div class="station-result-addr">${s.indirizzo || ""}</div>
+                    </div>
+                    <div class="station-result-price">${priceStr}</div>
+                    <button class="star-btn" data-id="${s.id}" title="${isFav ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}">${isFav ? "⭐" : "☆"}</button>
+                </div>
+            `;
+        }).join("");
+
+        container.querySelectorAll(".star-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleFavorite(parseInt(btn.dataset.id));
+                // Refresh search results to update star
+                document.getElementById("station-search-input").dispatchEvent(new Event("input"));
+            });
+        });
+    });
+}
+
+function closeFavModal() {
+    document.getElementById("fav-modal").style.display = "none";
+}
+
+function toggleFavorite(stationId) {
+    let favs = getFavorites();
+    if (favs.includes(stationId)) {
+        favs = favs.filter(id => id !== stationId);
+    } else {
+        favs.push(stationId);
+    }
+    saveFavorites(favs);
+    renderFavorites();
+}
+
+function renderFavorites() {
+    const favIds = getFavorites();
+    const emptyEl = document.getElementById("fav-empty");
+    const listEl = document.getElementById("fav-list");
+
+    if (favIds.length === 0 || !STATIONS) {
+        emptyEl.style.display = "block";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    emptyEl.style.display = "none";
+    const favStations = favIds.map(id => STATIONS.find(s => s.id === id)).filter(Boolean);
+
+    listEl.innerHTML = favStations.map(s => {
+        let pricesHtml = "";
+        for (const fuel of ["Benzina", "Gasolio", "GPL", "Metano"]) {
+            const stPrice = s.prezzi?.[fuel]?.self;
+            if (stPrice == null) continue;
+
+            // Confronta con media comunale o provinciale
+            let avgPrice = null;
+            let avgLabel = "";
+            if (s.comune && DATA.comunali?.[s.comune]?.[fuel]?.self?.media) {
+                avgPrice = DATA.comunali[s.comune][fuel].self.media;
+                avgLabel = s.comune;
+            } else if (s.provincia && DATA.provinciale?.[s.provincia]?.[fuel]?.self?.media) {
+                avgPrice = DATA.provinciale[s.provincia][fuel].self.media;
+                avgLabel = s.provincia;
+            } else if (DATA.nazionale?.[fuel]?.self?.media) {
+                avgPrice = DATA.nazionale[fuel].self.media;
+                avgLabel = "Italia";
+            }
+
+            let vsHtml = "";
+            if (avgPrice != null) {
+                const diff = stPrice - avgPrice;
+                const cls = diff < -0.005 ? "better" : diff > 0.005 ? "worse" : "same";
+                const sign = diff > 0 ? "+" : "";
+                vsHtml = `<span class="${cls}">${sign}${diff.toFixed(3)}</span> vs ${avgLabel}`;
+            }
+
+            pricesHtml += `
+                <div class="fav-fuel">
+                    <div class="fav-fuel-label">${FUEL_EMOJI[fuel] || ""} ${fuel}</div>
+                    <div class="fav-fuel-price">${stPrice.toFixed(3)} €</div>
+                    <div class="fav-fuel-vs">${vsHtml}</div>
+                </div>
+            `;
+        }
+
+        // Badge conveniente/costoso (basato su benzina)
+        let badge = "";
+        const benz = s.prezzi?.Benzina?.self;
+        const benzAvg = DATA.nazionale?.Benzina?.self?.media;
+        if (benz != null && benzAvg != null) {
+            const diff = benz - benzAvg;
+            if (diff < -0.02) badge = `<span class="fav-badge cheap">💰 Conveniente</span>`;
+            else if (diff > 0.02) badge = `<span class="fav-badge expensive">📈 Sopra media</span>`;
+            else badge = `<span class="fav-badge average">≈ In media</span>`;
+        }
+
+        return `
+            <div class="fav-card">
+                <div class="fav-card-header">
+                    <div class="fav-card-info">
+                        <h4>${s.bandiera || s.gestore} — ${s.nome || ""}</h4>
+                        <div class="fav-address">${s.indirizzo || ""}</div>
+                        ${badge}
+                    </div>
+                    <button class="fav-remove" data-id="${s.id}" title="Rimuovi">🗑️</button>
+                </div>
+                <div class="fav-prices">${pricesHtml}</div>
+            </div>
+        `;
+    }).join("");
+
+    // Remove buttons
+    listEl.querySelectorAll(".fav-remove").forEach(btn => {
+        btn.addEventListener("click", () => {
+            toggleFavorite(parseInt(btn.dataset.id));
+        });
+    });
 }
 
 })();

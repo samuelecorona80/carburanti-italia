@@ -428,6 +428,51 @@ def update_history(history: list, current: dict, today: str) -> list:
     return history
 
 
+# ── Stations (singoli impianti per i preferiti) ─────────────────────────────
+
+def build_stations(merged: pd.DataFrame, anagrafica: pd.DataFrame) -> list:
+    """Costruisce la lista di tutti i singoli impianti con prezzi, per la funzione preferiti."""
+    stations = []
+    
+    # Raggruppa prezzi per impianto
+    grouped = merged.groupby("idImpianto")
+    
+    for imp_id, group in grouped:
+        # Info anagrafica
+        ana_row = anagrafica[anagrafica["idImpianto"] == imp_id]
+        if len(ana_row) == 0:
+            continue
+        ana = ana_row.iloc[0]
+        
+        prezzi = {}
+        for _, row in group.iterrows():
+            fuel = row.get("carburante")
+            if not fuel:
+                continue
+            mode = "self" if row.get("is_self", True) else "servito"
+            if fuel not in prezzi:
+                prezzi[fuel] = {}
+            prezzi[fuel][mode] = round(float(row["prezzo"]), 3)
+        
+        station = {
+            "id": int(imp_id) if str(imp_id).isdigit() else imp_id,
+            "gestore": str(ana.get("Gestore", "")),
+            "bandiera": str(ana.get("Bandiera", "")),
+            "nome": str(ana.get("Nome Impianto", "")),
+            "indirizzo": str(ana.get("Indirizzo", "")),
+            "comune": str(ana.get("Comune", "")),
+            "provincia": str(ana.get("Provincia", "")),
+            "cap": str(ana.get("CAP", "")),
+            "lat": float(ana["Latitudine"]) if pd.notna(ana.get("Latitudine")) else None,
+            "lng": float(ana["Longitudine"]) if pd.notna(ana.get("Longitudine")) else None,
+            "prezzi": prezzi,
+        }
+        stations.append(station)
+    
+    log.info(f"Stations: {len(stations)} impianti con prezzi")
+    return stations
+
+
 # ── I/O JSON ────────────────────────────────────────────────────────────────
 
 def load_json(path: Path) -> dict | list:
@@ -513,12 +558,17 @@ def main():
         "prezzi_processati": latest["totale_prezzi"],
     }
 
+    # Stations per i preferiti
+    log.info("Generazione lista distributori...")
+    stations = build_stations(merged, anagrafica)
+
     # Salva in data/ e site/data/
     log.info("Salvataggio JSON...")
     for d in [DATA_DIR, SITE_DATA_DIR]:
         save_json(latest, d / "latest.json")
         save_json(history, d / "history.json")
         save_json(last_update, d / "last_update.json", compact=False)
+        save_json(stations, d / "stations.json")
 
     log.info("=== ETL completato con successo ===")
 
