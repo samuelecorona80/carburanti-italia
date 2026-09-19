@@ -640,3 +640,125 @@ body::after {
     .data-table { font-size: 0.78rem; }
     .data-table th, .data-table td { padding: 9px 10px; }
 }
+
+
+/* -- Zone Banner ---------------------------------------------------------- */
+.zone-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    margin: 12px 0;
+    background: var(--blue-bg);
+    border: 1px solid rgba(63, 140, 255, 0.25);
+    border-radius: var(--radius-sm);
+    color: var(--blue);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.zone-banner .btn-sm { font-size: 0.75rem; }
+
+/* -- Route Casa-Lavoro ---------------------------------------------------- */
+.route-inputs {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.route-field {
+    flex: 1;
+    min-width: 200px;
+}
+.route-field label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+.route-field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    background: rgba(7, 17, 29, 0.7);
+    color: var(--text);
+    outline: none;
+    font-family: var(--font);
+    transition: border-color 0.2s;
+}
+.route-field input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(63, 140, 255, 0.15);
+}
+.route-go-btn {
+    padding: 10px 20px !important;
+    font-size: 0.85rem !important;
+    background: var(--blue) !important;
+    color: #fff !important;
+    border-color: var(--blue) !important;
+    white-space: nowrap;
+}
+.route-go-btn:hover {
+    opacity: 0.9;
+}
+.route-status {
+    padding: 12px 18px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+}
+.route-savings {
+    background: var(--green-bg);
+    border: 1px solid rgba(100, 231, 139, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    color: var(--green);
+    font-weight: 600;
+}
+.route-savings .saving-amount {
+    font-size: 1.4rem;
+    font-family: var(--font-mono);
+    font-weight: 800;
+}
+.route-savings .saving-detail {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-top: 4px;
+}
+.route-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.route-badge.cheapest {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid rgba(100,231,139,0.2);
+}
+.route-badge.priciest {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid rgba(255,107,107,0.2);
+}
+.dist-km {
+    font-size: 0.75rem;
+    color: var(--dim);
+}
+
+@media (max-width: 768px) {
+    .route-inputs { flex-direction: column; }
+    .route-field { min-width: 100%; }
+}
