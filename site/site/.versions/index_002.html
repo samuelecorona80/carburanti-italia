@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prezzi Carburanti Italia — Dashboard</title>
+    <meta name="description" content="Dashboard interattiva prezzi carburanti in Italia. Medie nazionali, regionali, provinciali. Dati MIMIT aggiornati quotidianamente.">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-inner">
+            <div class="header-left">
+                <h1>⛽ Prezzi Carburanti Italia</h1>
+                <p class="subtitle">Dati MIMIT • Aggiornamento quotidiano</p>
+            </div>
+            <div class="header-right">
+                <span id="last-update" class="badge">—</span>
+                <button id="theme-toggle" class="btn-icon" title="Cambia tema">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Loading -->
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Caricamento dati...</p>
+        </div>
+
+        <!-- Errore -->
+        <div id="error-banner" class="error-banner" style="display:none">
+            <p>⚠️ <span id="error-msg"></span></p>
+        </div>
+
+        <!-- Stats banner -->
+        <div id="stats-banner" class="stats-banner" style="display:none">
+            <span>📊 <strong id="stat-impianti">0</strong> distributori</span>
+            <span>💰 <strong id="stat-prezzi">0</strong> prezzi rilevati</span>
+        </div>
+
+        <!-- Sezione 1: Card nazionali -->
+        <section id="national-cards" class="section">
+            <h2>📊 Panoramica Nazionale <small>(self-service)</small></h2>
+            <div class="cards-grid" id="cards-container"></div>
+        </section>
+
+        <!-- Sezione Preferiti -->
+        <section class="section" id="favorites-section">
+            <div class="section-header">
+                <h2>⭐ I Miei Distributori</h2>
+                <button class="btn-sm" id="add-fav-btn">+ Aggiungi</button>
+            </div>
+            <div id="fav-empty" class="fav-empty">
+                <p>Nessun distributore salvato. Clicca <strong>+ Aggiungi</strong> per cercare e salvare i tuoi distributori preferiti.</p>
+            </div>
+            <div id="fav-list" class="fav-list"></div>
+
+            <!-- Modal ricerca distributore -->
+            <div id="fav-modal" class="modal-overlay" style="display:none">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3>Cerca distributore</h3>
+                        <button id="fav-modal-close" class="btn-icon">✕</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="station-search-input" placeholder="Nome, gestore, indirizzo o città..." autocomplete="off">
+                    </div>
+                    <div id="station-search-results" class="station-results"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sezione 2: Grafico trend -->
+        <section class="section">
+            <div class="section-header">
+                <h2>📈 Trend Prezzi</h2>
+                <div class="btn-group" id="trend-period">
+                    <button class="btn-sm" data-days="30">30gg</button>
+                    <button class="btn-sm active" data-days="60">60gg</button>
+                    <button class="btn-sm" data-days="90">90gg</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="trend-chart"></canvas>
+            </div>
+            <div class="chart-legend" id="chart-legend"></div>
+        </section>
+
+        <!-- Sezione 3: Tabella regionale -->
+        <section class="section">
+            <h2>🗺️ Prezzi per Regione</h2>
+            <p class="hint">Clicca su una regione per vedere le province</p>
+            <div class="table-responsive">
+                <table id="regional-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="name">Regione ▿</th>
+                            <th data-sort="benzina">Benzina ▿</th>
+                            <th data-sort="benzina_var">Δ gg</th>
+                            <th data-sort="gasolio">Gasolio ▿</th>
+                            <th data-sort="gasolio_var">Δ gg</th>
+                            <th data-sort="gpl">GPL ▿</th>
+                            <th data-sort="metano">Metano ▿</th>
+                        </tr>
+                    </thead>
+                    <tbody id="regional-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Sezione 4: Drill-down provinciale -->
+        <section id="province-section" class="section" style="display:none">
+            <div class="section-header">
+                <h2 id="province-title">Province di —</h2>
+                <button id="province-close" class="btn-sm">✕ Chiudi</button>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Provincia</th>
+                            <th>Benzina</th>
+                            <th>Gasolio</th>
+                            <th>GPL</th>
+                            <th>Metano</th>
+                        </tr>
+                    </thead>
+                    <tbody id="province-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Sezione 5: Ricerca comune -->
+        <section class="section">
+            <h2>🔍 Cerca per Comune</h2>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Digita il nome del comune..." autocomplete="off">
+                <div id="search-results" class="search-dropdown"></div>
+            </div>
+            <div id="comune-detail" class="comune-detail" style="display:none"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                Dati: <a href="https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti" target="_blank" rel="noopener">MIMIT Open Data</a>
+                — Licenza IODL 2.0
+                — <a href="https://samuelecorona.it" target="_blank" rel="noopener">samuelecorona.it</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
