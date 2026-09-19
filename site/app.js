@@ -32,7 +32,12 @@ const FUEL_EMOJI = {
 const PROVINCE_TO_REGION = {};
 
 // ── Init ───────────────────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", init);
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+} else {
+    // DOMContentLoaded already fired
+    init();
+}
 
 async function init() {
     initTheme();
