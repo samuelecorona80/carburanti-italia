@@ -129,6 +129,8 @@ FUEL_MAP = {
     "hvo future": "Gasolio",
     "hvolution": "Gasolio",
     "hvovolution": "Gasolio",
+    "hvoluzione": "Gasolio",
+    "hiq perform+": "Benzina",
     "diesel hvo": "Gasolio",
     "diesel hvo energy": "Gasolio",
     "gasolio bio hvo": "Gasolio",
@@ -149,8 +151,8 @@ MAIN_FUELS = ["Benzina", "Gasolio", "GPL", "Metano"]
 
 # Range prezzi validi per filtrare outlier
 PRICE_RANGES = {
-    "Benzina": (0.90, 3.50),
-    "Gasolio": (0.90, 3.50),
+    "Benzina": (0.90, 4.00),
+    "Gasolio": (0.90, 4.00),
     "GPL": (0.30, 2.00),
     "Metano": (0.30, 4.00),
 }
@@ -341,9 +343,9 @@ def aggregate(merged: pd.DataFrame) -> dict:
                 "servito": compute_stats(fuel_df[~fuel_df["is_self"]]),
             }
 
-    # Comunali (top 200 per numero impianti, per non esplodere il JSON)
+    # Comunali (tutti i comuni con almeno 1 impianto)
     if "Comune" in merged.columns:
-        comune_counts = merged.groupby("Comune")["idImpianto"].nunique().nlargest(200)
+        comune_counts = merged.groupby("Comune")["idImpianto"].nunique()
         for comune in comune_counts.index:
             com_df = merged[merged["Comune"] == comune]
             prov = com_df["Provincia"].mode().iloc[0] if len(com_df) > 0 else ""
