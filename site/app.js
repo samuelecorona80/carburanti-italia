@@ -16,10 +16,10 @@ let map = null;
 let trendDays = 60;
 
 const FUEL_COLORS = {
-    Benzina: "#10b981",
-    Gasolio: "#3b82f6",
-    GPL: "#f59e0b",
-    Metano: "#8b5cf6",
+    Benzina: "#64e78b",
+    Gasolio: "#3f8cff",
+    GPL: "#ffc65b",
+    Metano: "#a78bfa",
 };
 
 const FUEL_EMOJI = {
@@ -151,7 +151,6 @@ function renderTrendChart() {
 
     const canvas = document.getElementById("trend-chart");
     const ctx = canvas.getContext("2d");
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
 
     // Filtra per periodo
     const sliced = HISTORY.slice(-trendDays);
@@ -197,13 +196,13 @@ function renderTrendChart() {
             },
             scales: {
                 x: {
-                    grid: { color: isDark ? "#2d3148" : "#e5e7eb" },
-                    ticks: { color: isDark ? "#9ca3af" : "#6b7280", maxTicksLimit: 10 },
+                    grid: { color: "rgba(74, 112, 148, 0.15)" },
+                    ticks: { color: "#9fb2c7", maxTicksLimit: 10 },
                 },
                 y: {
-                    grid: { color: isDark ? "#2d3148" : "#e5e7eb" },
+                    grid: { color: "rgba(74, 112, 148, 0.15)" },
                     ticks: {
-                        color: isDark ? "#9ca3af" : "#6b7280",
+                        color: "#9fb2c7",
                         callback: v => v.toFixed(2) + " €",
                     },
                 },
@@ -471,13 +470,8 @@ function initMap() {
     map = L.map("map").setView([41.9, 12.5], 6);
 
     // Tile layer — detect theme
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const tileUrl = isDark
-        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    const tileAttr = isDark
-        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+    const tileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+    const tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
     L.tileLayer(tileUrl, { attribution: tileAttr, maxZoom: 18 }).addTo(map);
 
