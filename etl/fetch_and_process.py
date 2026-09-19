@@ -348,8 +348,10 @@ def aggregate(merged: pd.DataFrame) -> dict:
         comune_counts = merged.groupby("Comune")["idImpianto"].nunique()
         for comune in comune_counts.index:
             com_df = merged[merged["Comune"] == comune]
-            prov = com_df["Provincia"].mode().iloc[0] if len(com_df) > 0 else ""
-            cap = com_df["CAP"].mode().iloc[0] if "CAP" in com_df.columns and com_df["CAP"].notna().any() else ""
+            prov_mode = com_df["Provincia"].mode()
+            prov = prov_mode.iloc[0] if len(prov_mode) > 0 else ""
+            cap_mode = com_df["CAP"].mode() if "CAP" in com_df.columns and com_df["CAP"].notna().any() else pd.Series(dtype=str)
+            cap = cap_mode.iloc[0] if len(cap_mode) > 0 else ""
             result["comunali"][comune] = {"provincia": prov, "cap": str(cap)}
             for fuel in MAIN_FUELS:
                 fuel_df = com_df[com_df["carburante"] == fuel]
