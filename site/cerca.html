@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cerca Distributore &#x2014; Carburanti Italia</title>
+    <meta name="description" content="Cerca il distributore piu economico vicino a te o lungo il tuo percorso. Dati MIMIT aggiornati quotidianamente.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* -- Page-specific styles -- */
+        .cerca-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+        .cerca-header h1 { font-size:1.6em; font-weight:800; background:linear-gradient(135deg,#3f8cff,#64e78b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin:0; }
+        .cerca-back { color:var(--muted); text-decoration:none; font-size:.9em; transition:color .2s; }
+        .cerca-back:hover { color:var(--text); }
+
+        /* Mode toggle */
+        .mode-toggle { display:flex; gap:0; margin-bottom:24px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
+        .mode-btn { flex:1; padding:14px 20px; text-align:center; font-weight:600; font-size:.95em; cursor:pointer; background:rgba(0,0,0,.2); color:var(--muted); border:none; transition:all .2s; }
+        .mode-btn.active { background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; }
+        .mode-btn:hover:not(.active) { background:rgba(255,255,255,.05); color:var(--text); }
+
+        /* Form card */
+        .cerca-form-card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:24px; backdrop-filter:blur(20px); margin-bottom:24px; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .form-full { grid-column:1/-1; }
+        .form-field { display:flex; flex-direction:column; gap:6px; }
+        .form-field label { font-size:.78em; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+        .form-input, .form-select { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:12px 14px; color:var(--text); font-size:.92em; font-family:Inter,sans-serif; outline:none; transition:border-color .2s; width:100%; box-sizing:border-box; }
+        .form-input:focus, .form-select:focus { border-color:rgba(63,140,255,.5); }
+        .form-select { cursor:pointer; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239fb2c7' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+        .input-with-btn { display:flex; gap:8px; }
+        .input-with-btn input { flex:1; }
+        .gps-btn { background:rgba(63,140,255,.15); border:1px solid rgba(63,140,255,.3); border-radius:10px; padding:12px 14px; color:#3f8cff; font-weight:600; cursor:pointer; white-space:nowrap; transition:background .2s; font-family:Inter,sans-serif; }
+        .gps-btn:hover { background:rgba(63,140,255,.25); }
+
+        /* Range slider */
+        .range-row { display:flex; align-items:center; gap:12px; }
+        .range-row input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:6px; background:rgba(255,255,255,.1); border-radius:3px; outline:none; cursor:pointer; }
+        .range-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#3f8cff; border:2px solid rgba(255,255,255,.2); cursor:pointer; }
+        .range-row input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#3f8cff; border:2px solid rgba(255,255,255,.2); cursor:pointer; }
+        .range-val { min-width:50px; text-align:center; font-weight:600; color:var(--text); font-size:.92em; }
+
+        /* Checkbox */
+        .check-row { display:flex; align-items:center; gap:10px; cursor:pointer; }
+        .check-row input[type=checkbox] { width:18px; height:18px; accent-color:#3f8cff; cursor:pointer; }
+        .check-row span { color:var(--text); font-size:.92em; }
+
+        /* Buttons */
+        .btn-primary { background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; border:none; border-radius:12px; padding:14px 28px; font-weight:600; font-size:1em; cursor:pointer; transition:transform .15s,box-shadow .2s; box-shadow:0 4px 15px rgba(37,99,235,.3); font-family:Inter,sans-serif; width:100%; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(37,99,235,.4); }
+        .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+        /* Results */
+        .results-card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:24px; backdrop-filter:blur(20px); margin-bottom:24px; }
+        .results-status { color:var(--muted); font-size:.9em; margin-bottom:12px; }
+        .results-saving { background:linear-gradient(90deg,rgba(100,231,139,.1),rgba(63,140,255,.1)); border:1px solid rgba(100,231,139,.2); border-radius:12px; padding:14px 18px; margin-bottom:16px; }
+        .results-saving strong { color:#64e78b; }
+        .results-saving span { color:var(--muted); font-size:.9em; }
+
+        /* Table */
+        .results-table { width:100%; border-collapse:collapse; font-size:.88em; }
+        .results-table th { text-align:left; padding:10px 12px; color:var(--muted); font-size:.78em; font-weight:600; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid rgba(255,255,255,.06); cursor:pointer; user-select:none; }
+        .results-table th:hover { color:var(--text); }
+        .results-table td { padding:12px; border-bottom:1px solid rgba(255,255,255,.04); }
+        .results-table tr:hover td { background:rgba(255,255,255,.02); }
+        .rank-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; font-weight:700; font-size:.8em; }
+        .rank-1 { background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#000; }
+        .rank-2 { background:linear-gradient(135deg,#9ca3af,#6b7280); color:#fff; }
+        .rank-3 { background:linear-gradient(135deg,#d97706,#b45309); color:#fff; }
+        .rank-n { background:rgba(255,255,255,.06); color:var(--muted); }
+        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75em; font-weight:600; }
+        .badge-best { background:rgba(100,231,139,.15); color:#64e78b; }
+        .badge-avg { background:rgba(251,191,36,.15); color:#fbbf24; }
+        .badge-worst { background:rgba(239,68,68,.15); color:#ef4444; }
+        .station-name { font-weight:600; color:var(--text); }
+        .station-addr { font-size:.82em; color:var(--muted); margin-top:2px; }
+
+        /* Map */
+        .map-card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:20px; overflow:hidden; margin-bottom:24px; }
+        #cerca-map { height:420px; width:100%; }
+
+        /* Autocomplete dropdown */
+        .ac-dropdown { position:absolute; top:100%; left:0; right:0; background:#0c1b2d; border:1px solid rgba(255,255,255,.1); border-radius:10px; margin-top:4px; max-height:200px; overflow-y:auto; z-index:1000; display:none; }
+        .ac-dropdown.show { display:block; }
+        .ac-item { padding:10px 14px; color:var(--text); font-size:.88em; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.04); }
+        .ac-item:hover { background:rgba(63,140,255,.1); }
+        .ac-item:last-child { border-bottom:none; }
+        .ac-wrap { position:relative; flex:1; }
+
+        /* Loading */
+        .loading-spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(255,255,255,.1); border-top-color:#3f8cff; border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:8px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* Hidden sections */
+        .hidden { display:none !important; }
+
+        /* Responsive */
+        @media (max-width:700px) {
+            .form-grid { grid-template-columns:1fr; }
+            .cerca-header h1 { font-size:1.2em; }
+            .results-table { font-size:.8em; }
+            .results-table td, .results-table th { padding:8px 6px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="cerca-header">
+                <h1>&#x1F50D; Cerca Distributore</h1>
+                <a href="index.html" class="cerca-back">&#x2190; Torna alla Dashboard</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Mode toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="mode-point" onclick="setMode('point')">&#x1F4CD; Punto Fisso</button>
+            <button class="mode-btn" id="mode-route" onclick="setMode('route')">&#x1F6E3;&#xFE0F; Percorso A &#x2192; B</button>
+        </div>
+
+        <!-- Point mode form -->
+        <div class="cerca-form-card" id="form-point">
+            <div class="form-grid">
+                <div class="form-field form-full">
+                    <label>Zona</label>
+                    <div class="input-with-btn">
+                        <div class="ac-wrap">
+                            <input type="text" class="form-input" id="pt-zona" placeholder="Indirizzo, citta o CAP..." autocomplete="off">
+                            <div class="ac-dropdown" id="pt-zona-ac"></div>
+                        </div>
+                        <button class="gps-btn" id="pt-gps" onclick="useGps('point')">&#x1F4CD; GPS</button>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Raggio: <span id="pt-raggio-val">5</span> km</label>
+                    <div class="range-row">
+                        <input type="range" id="pt-raggio" min="1" max="30" value="5" oninput="document.getElementById('pt-raggio-val').textContent=this.value">
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Carburante</label>
+                    <select class="form-select" id="pt-fuel">
+                        <option value="Gasolio">Gasolio</option>
+                        <option value="Benzina">Benzina</option>
+                        <option value="GPL">GPL</option>
+                        <option value="Metano">Metano</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Modalita</label>
+                    <select class="form-select" id="pt-mode">
+                        <option value="self">Self-service</option>
+                        <option value="servito">Servito</option>
+                    </select>
+                </div>
+                <div class="form-field form-full">
+                    <button class="btn-primary" id="pt-search" onclick="searchPoint()">Cerca</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Route mode form -->
+        <div class="cerca-form-card hidden" id="form-route">
+            <div class="form-grid">
+                <div class="form-field form-full">
+                    <label>Partenza (A)</label>
+                    <div class="input-with-btn">
+                        <div class="ac-wrap">
+                            <input type="text" class="form-input" id="rt-from" placeholder="Indirizzo di partenza..." autocomplete="off">
+                            <div class="ac-dropdown" id="rt-from-ac"></div>
+                        </div>
+                        <button class="gps-btn" onclick="useGps('route-from')">&#x1F4CD; GPS</button>
+                    </div>
+                </div>
+                <div class="form-field form-full">
+                    <label>Arrivo (B)</label>
+                    <div class="input-with-btn">
+                        <div class="ac-wrap">
+                            <input type="text" class="form-input" id="rt-to" placeholder="Indirizzo di arrivo..." autocomplete="off">
+                            <div class="ac-dropdown" id="rt-to-ac"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Deviazione max: <span id="rt-dev-val">2</span> km</label>
+                    <div class="range-row">
+                        <input type="range" id="rt-dev" min="0.5" max="5" step="0.5" value="2" oninput="document.getElementById('rt-dev-val').textContent=this.value">
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Carburante</label>
+                    <select class="form-select" id="rt-fuel">
+                        <option value="Gasolio">Gasolio</option>
+                        <option value="Benzina">Benzina</option>
+                        <option value="GPL">GPL</option>
+                        <option value="Metano">Metano</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Modalita</label>
+                    <select class="form-select" id="rt-mode">
+                        <option value="self">Self-service</option>
+                        <option value="servito">Servito</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>&nbsp;</label>
+                    <div class="check-row" onclick="document.getElementById('rt-return').click()">
+                        <input type="checkbox" id="rt-return">
+                        <span>Andata e Ritorno</span>
+                    </div>
+                </div>
+                <div class="form-field form-full">
+                    <button class="btn-primary" id="rt-search" onclick="searchRoute()">Cerca Lungo il Percorso</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-card">
+            <div id="cerca-map"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-card hidden" id="results-panel">
+            <div class="results-status" id="results-status"></div>
+            <div class="results-saving hidden" id="results-saving"></div>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Distributore</th>
+                        <th onclick="sortResults('dist')">Distanza</th>
+                        <th onclick="sortResults('price')">Prezzo</th>
+                        <th>vs Migliore</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+        </div>
+
+        <footer style="text-align:center;padding:20px;color:var(--muted);font-size:.8em;">
+            Dati MIMIT (ex-MISE) &#x2022; Licenza IODL 2.0 &#x2022; <a href="index.html" style="color:#3f8cff;text-decoration:none;">Dashboard Principale</a>
+        </footer>
+    </main>
+
+    <script src="cerca.js"></script>
+</body>
+</html>
