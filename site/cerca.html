@@ -1,256 +1,208 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cerca Distributore &#x2014; Carburanti Italia</title>
-    <meta name="description" content="Cerca il distributore piu economico vicino a te o lungo il tuo percorso. Dati MIMIT aggiornati quotidianamente.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        /* -- Page-specific styles -- */
-        .cerca-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
-        .cerca-header h1 { font-size:1.6em; font-weight:800; background:linear-gradient(135deg,#3f8cff,#64e78b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin:0; }
-        .cerca-back { color:var(--muted); text-decoration:none; font-size:.9em; transition:color .2s; }
-        .cerca-back:hover { color:var(--text); }
-
-        /* Mode toggle */
-        .mode-toggle { display:flex; gap:0; margin-bottom:24px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
-        .mode-btn { flex:1; padding:14px 20px; text-align:center; font-weight:600; font-size:.95em; cursor:pointer; background:rgba(0,0,0,.2); color:var(--muted); border:none; transition:all .2s; }
-        .mode-btn.active { background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; }
-        .mode-btn:hover:not(.active) { background:rgba(255,255,255,.05); color:var(--text); }
-
-        /* Form card */
-        .cerca-form-card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:24px; backdrop-filter:blur(20px); margin-bottom:24px; }
-        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-        .form-full { grid-column:1/-1; }
-        .form-field { display:flex; flex-direction:column; gap:6px; }
-        .form-field label { font-size:.78em; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
-        .form-input, .form-select { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:12px 14px; color:var(--text); font-size:.92em; font-family:Inter,sans-serif; outline:none; transition:border-color .2s; width:100%; box-sizing:border-box; }
-        .form-input:focus, .form-select:focus { border-color:rgba(63,140,255,.5); }
-        .form-select { cursor:pointer; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239fb2c7' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
-        .input-with-btn { display:flex; gap:8px; }
-        .input-with-btn input { flex:1; }
-        .gps-btn { background:rgba(63,140,255,.15); border:1px solid rgba(63,140,255,.3); border-radius:10px; padding:12px 14px; color:#3f8cff; font-weight:600; cursor:pointer; white-space:nowrap; transition:background .2s; font-family:Inter,sans-serif; }
-        .gps-btn:hover { background:rgba(63,140,255,.25); }
-
-        /* Range slider */
-        .range-row { display:flex; align-items:center; gap:12px; }
-        .range-row input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:6px; background:rgba(255,255,255,.1); border-radius:3px; outline:none; cursor:pointer; }
-        .range-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#3f8cff; border:2px solid rgba(255,255,255,.2); cursor:pointer; }
-        .range-row input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#3f8cff; border:2px solid rgba(255,255,255,.2); cursor:pointer; }
-        .range-val { min-width:50px; text-align:center; font-weight:600; color:var(--text); font-size:.92em; }
-
-        /* Checkbox */
-        .check-row { display:flex; align-items:center; gap:10px; cursor:pointer; }
-        .check-row input[type=checkbox] { width:18px; height:18px; accent-color:#3f8cff; cursor:pointer; }
-        .check-row span { color:var(--text); font-size:.92em; }
-
-        /* Buttons */
-        .btn-primary { background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; border:none; border-radius:12px; padding:14px 28px; font-weight:600; font-size:1em; cursor:pointer; transition:transform .15s,box-shadow .2s; box-shadow:0 4px 15px rgba(37,99,235,.3); font-family:Inter,sans-serif; width:100%; }
-        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(37,99,235,.4); }
-        .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-
-        /* Results */
-        .results-card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:24px; backdrop-filter:blur(20px); margin-bottom:24px; }
-        .results-status { color:var(--muted); font-size:.9em; margin-bottom:12px; }
-        .results-saving { background:linear-gradient(90deg,rgba(100,231,139,.1),rgba(63,140,255,.1)); border:1px solid rgba(100,231,139,.2); border-radius:12px; padding:14px 18px; margin-bottom:16px; }
-        .results-saving strong { color:#64e78b; }
-        .results-saving span { color:var(--muted); font-size:.9em; }
-
-        /* Table */
-        .results-table { width:100%; border-collapse:collapse; font-size:.88em; }
-        .results-table th { text-align:left; padding:10px 12px; color:var(--muted); font-size:.78em; font-weight:600; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid rgba(255,255,255,.06); cursor:pointer; user-select:none; }
-        .results-table th:hover { color:var(--text); }
-        .results-table td { padding:12px; border-bottom:1px solid rgba(255,255,255,.04); }
-        .results-table tr:hover td { background:rgba(255,255,255,.02); }
-        .rank-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; font-weight:700; font-size:.8em; }
-        .rank-1 { background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#000; }
-        .rank-2 { background:linear-gradient(135deg,#9ca3af,#6b7280); color:#fff; }
-        .rank-3 { background:linear-gradient(135deg,#d97706,#b45309); color:#fff; }
-        .rank-n { background:rgba(255,255,255,.06); color:var(--muted); }
-        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75em; font-weight:600; }
-        .badge-best { background:rgba(100,231,139,.15); color:#64e78b; }
-        .badge-avg { background:rgba(251,191,36,.15); color:#fbbf24; }
-        .badge-worst { background:rgba(239,68,68,.15); color:#ef4444; }
-        .station-name { font-weight:600; color:var(--text); }
-        .station-addr { font-size:.82em; color:var(--muted); margin-top:2px; }
-
-        /* Map */
-        .map-card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:20px; overflow:hidden; margin-bottom:24px; }
-        #cerca-map { height:420px; width:100%; }
-
-        /* Autocomplete dropdown */
-        .ac-dropdown { position:absolute; top:100%; left:0; right:0; background:#0c1b2d; border:1px solid rgba(255,255,255,.1); border-radius:10px; margin-top:4px; max-height:200px; overflow-y:auto; z-index:1000; display:none; }
-        .ac-dropdown.show { display:block; }
-        .ac-item { padding:10px 14px; color:var(--text); font-size:.88em; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.04); }
-        .ac-item:hover { background:rgba(63,140,255,.1); }
-        .ac-item:last-child { border-bottom:none; }
-        .ac-wrap { position:relative; flex:1; }
-
-        /* Loading */
-        .loading-spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(255,255,255,.1); border-top-color:#3f8cff; border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:8px; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-
-        /* Hidden sections */
-        .hidden { display:none !important; }
-
-        /* Responsive */
-        @media (max-width:700px) {
-            .form-grid { grid-template-columns:1fr; }
-            .cerca-header h1 { font-size:1.2em; }
-            .results-table { font-size:.8em; }
-            .results-table td, .results-table th { padding:8px 6px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cerca Distributore</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,sans-serif;background:#07111d;color:#e8ecf1;min-height:100vh}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+header{padding:14px 0 6px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:1.15em;font-weight:700;background:linear-gradient(135deg,#3f8cff,#64e78b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+header a{color:#5a7a9b;text-decoration:none;font-size:.82em}
+.search-box{background:rgba(12,27,45,.88);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;margin:12px 0}
+.search-row{display:flex;gap:8px}
+.search-row input{flex:1;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;color:#e8ecf1;font-size:.92em;font-family:Inter,sans-serif;outline:none}
+.search-row input:focus{border-color:rgba(63,140,255,.5)}
+.search-row button{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-weight:600;font-size:.92em;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap}
+.gps-btn{background:rgba(63,140,255,.15)!important;color:#3f8cff!important;border:1px solid rgba(63,140,255,.3)!important;padding:11px 12px!important}
+.hint{color:#5a7a9b;font-size:.76em;margin-top:8px;line-height:1.5}
+.opts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.opts-toggle{color:#3f8cff;font-size:.8em;cursor:pointer;font-weight:600;user-select:none}
+.opts-row{display:none;flex-wrap:wrap;gap:8px;width:100%;margin-top:8px}
+.opts-row.show{display:flex}
+.opts-row select,.opts-row input{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 10px;color:#e8ecf1;font-size:.82em;font-family:Inter,sans-serif;outline:none}
+.opts-row select{-webkit-appearance:none;cursor:pointer;padding-right:24px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%235a7a9b' d='M2 3l3 4 3-4z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.ac-list{background:#0c1b2d;border:1px solid rgba(255,255,255,.1);border-radius:10px;margin-top:4px;display:none;position:absolute;left:0;right:0;z-index:99;max-height:180px;overflow-y:auto}
+.ac-list.show{display:block}
+.ac-item{padding:9px 12px;font-size:.85em;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)}
+.ac-item:hover{background:rgba(63,140,255,.1)}
+.ac-wrap{position:relative;flex:1}
+.map-box{border-radius:16px;overflow:hidden;margin:12px 0;border:1px solid rgba(255,255,255,.08)}
+#map{height:280px;width:100%}
+.saving{background:linear-gradient(90deg,rgba(100,231,139,.12),rgba(63,140,255,.08));border:1px solid rgba(100,231,139,.2);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:.88em;display:none}
+.saving b{color:#64e78b}
+.saving span{color:#5a7a9b}
+.status{color:#5a7a9b;font-size:.82em;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th{text-align:left;padding:8px 10px;color:#5a7a9b;font-size:.72em;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid rgba(255,255,255,.06)}
+td{padding:10px;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.r1{color:#fbbf24;font-weight:700}
+.name{font-weight:600;color:#e8ecf1}
+.addr{font-size:.78em;color:#5a7a9b;margin-top:1px}
+.price{font-weight:700}
+.best{color:#64e78b}
+.diff{color:#5a7a9b;font-size:.82em}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.7em;font-weight:600}
+.tag-best{background:rgba(100,231,139,.15);color:#64e78b}
+.tag-exp{background:rgba(239,68,68,.15);color:#ef4444}
+.loading{display:none;text-align:center;padding:20px;color:#5a7a9b}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:#3f8cff;border-radius:50%;animation:sp .5s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 20px;color:#5a7a9b}
+@media(max-width:500px){.wrap{padding:10px}th,td{padding:6px 5px}table{font-size:.8em}}
+</style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div class="cerca-header">
-                <h1>&#x1F50D; Cerca Distributore</h1>
-                <a href="index.html" class="cerca-back">&#x2190; Torna alla Dashboard</a>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-        <!-- Mode toggle -->
-        <div class="mode-toggle">
-            <button class="mode-btn active" id="mode-point" onclick="setMode('point')">&#x1F4CD; Punto Fisso</button>
-            <button class="mode-btn" id="mode-route" onclick="setMode('route')">&#x1F6E3;&#xFE0F; Percorso A &#x2192; B</button>
-        </div>
-
-        <!-- Point mode form -->
-        <div class="cerca-form-card" id="form-point">
-            <div class="form-grid">
-                <div class="form-field form-full">
-                    <label>Zona</label>
-                    <div class="input-with-btn">
-                        <div class="ac-wrap">
-                            <input type="text" class="form-input" id="pt-zona" placeholder="Indirizzo, citta o CAP..." autocomplete="off">
-                            <div class="ac-dropdown" id="pt-zona-ac"></div>
-                        </div>
-                        <button class="gps-btn" id="pt-gps" onclick="useGps('point')">&#x1F4CD; GPS</button>
-                    </div>
-                </div>
-                <div class="form-field">
-                    <label>Raggio: <span id="pt-raggio-val">5</span> km</label>
-                    <div class="range-row">
-                        <input type="range" id="pt-raggio" min="1" max="30" value="5" oninput="document.getElementById('pt-raggio-val').textContent=this.value">
-                    </div>
-                </div>
-                <div class="form-field">
-                    <label>Carburante</label>
-                    <select class="form-select" id="pt-fuel">
-                        <option value="Gasolio">Gasolio</option>
-                        <option value="Benzina">Benzina</option>
-                        <option value="GPL">GPL</option>
-                        <option value="Metano">Metano</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Modalita</label>
-                    <select class="form-select" id="pt-mode">
-                        <option value="self">Self-service</option>
-                        <option value="servito">Servito</option>
-                    </select>
-                </div>
-                <div class="form-field form-full">
-                    <button class="btn-primary" id="pt-search" onclick="searchPoint()">Cerca</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Route mode form -->
-        <div class="cerca-form-card hidden" id="form-route">
-            <div class="form-grid">
-                <div class="form-field form-full">
-                    <label>Partenza (A)</label>
-                    <div class="input-with-btn">
-                        <div class="ac-wrap">
-                            <input type="text" class="form-input" id="rt-from" placeholder="Indirizzo di partenza..." autocomplete="off">
-                            <div class="ac-dropdown" id="rt-from-ac"></div>
-                        </div>
-                        <button class="gps-btn" onclick="useGps('route-from')">&#x1F4CD; GPS</button>
-                    </div>
-                </div>
-                <div class="form-field form-full">
-                    <label>Arrivo (B)</label>
-                    <div class="input-with-btn">
-                        <div class="ac-wrap">
-                            <input type="text" class="form-input" id="rt-to" placeholder="Indirizzo di arrivo..." autocomplete="off">
-                            <div class="ac-dropdown" id="rt-to-ac"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-field">
-                    <label>Deviazione max: <span id="rt-dev-val">2</span> km</label>
-                    <div class="range-row">
-                        <input type="range" id="rt-dev" min="0.5" max="5" step="0.5" value="2" oninput="document.getElementById('rt-dev-val').textContent=this.value">
-                    </div>
-                </div>
-                <div class="form-field">
-                    <label>Carburante</label>
-                    <select class="form-select" id="rt-fuel">
-                        <option value="Gasolio">Gasolio</option>
-                        <option value="Benzina">Benzina</option>
-                        <option value="GPL">GPL</option>
-                        <option value="Metano">Metano</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Modalita</label>
-                    <select class="form-select" id="rt-mode">
-                        <option value="self">Self-service</option>
-                        <option value="servito">Servito</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>&nbsp;</label>
-                    <div class="check-row" onclick="document.getElementById('rt-return').click()">
-                        <input type="checkbox" id="rt-return">
-                        <span>Andata e Ritorno</span>
-                    </div>
-                </div>
-                <div class="form-field form-full">
-                    <button class="btn-primary" id="rt-search" onclick="searchRoute()">Cerca Lungo il Percorso</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Map -->
-        <div class="map-card">
-            <div id="cerca-map"></div>
-        </div>
-
-        <!-- Results -->
-        <div class="results-card hidden" id="results-panel">
-            <div class="results-status" id="results-status"></div>
-            <div class="results-saving hidden" id="results-saving"></div>
-            <table class="results-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Distributore</th>
-                        <th onclick="sortResults('dist')">Distanza</th>
-                        <th onclick="sortResults('price')">Prezzo</th>
-                        <th>vs Migliore</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="results-body"></tbody>
-            </table>
-        </div>
-
-        <footer style="text-align:center;padding:20px;color:var(--muted);font-size:.8em;">
-            Dati MIMIT (ex-MISE) &#x2022; Licenza IODL 2.0 &#x2022; <a href="index.html" style="color:#3f8cff;text-decoration:none;">Dashboard Principale</a>
-        </footer>
-    </main>
-
-    <script src="cerca.js"></script>
+<div class="wrap">
+<header>
+<h1>&#x26FD; Cerca Distributore</h1>
+<a href="index.html">&#x2190; Dashboard</a>
+</header>
+<div class="search-box">
+<div class="search-row">
+<button class="gps-btn" id="gps" title="Usa la mia posizione">&#x1F4CD;</button>
+<div class="ac-wrap">
+<input id="q" placeholder="Dove? es: San Sperate oppure San Sperate > Cagliari" autocomplete="off">
+<div class="ac-list" id="ac"></div>
+</div>
+<button id="go">Cerca</button>
+</div>
+<div class="hint">Scrivi un luogo per cercare nel raggio, oppure <b>A &gt; B</b> per cercare lungo il percorso.</div>
+<div class="opts">
+<span class="opts-toggle" id="opts-toggle">&#x2699; Filtri</span>
+<div class="opts-row" id="opts-row">
+<select id="fuel"><option value="Gasolio">Gasolio</option><option value="Benzina">Benzina</option><option value="GPL">GPL</option><option value="Metano">Metano</option></select>
+<select id="mode"><option value="self">Self</option><option value="servito">Servito</option></select>
+<label style="color:#5a7a9b;font-size:.82em;display:flex;align-items:center;gap:4px"><input type="range" id="radius" min="1" max="20" value="5" style="width:80px;accent-color:#3f8cff"> <span id="radius-val">5</span> km</label>
+</div>
+</div>
+</div>
+<div class="map-box"><div id="map"></div></div>
+<div class="saving" id="saving"></div>
+<div class="status" id="status"></div>
+<div class="loading" id="loading"><span class="spin"></span>Calcolo percorso...</div>
+<div id="results"></div>
+<div class="empty" id="empty">Inserisci un luogo e premi Cerca</div>
+</div>
+<script>
+(function(){
+"use strict";
+var S=[],map,mk,rl,cl,fuel="Gasolio",pm="self",rad=5;
+document.addEventListener("DOMContentLoaded",function(){
+map=L.map("map",{zoomControl:true}).setView([39.36,9.01],11);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"OpenStreetMap",maxZoom:18}).addTo(map);
+mk=L.layerGroup().addTo(map);rl=L.layerGroup().addTo(map);cl=L.layerGroup().addTo(map);
+fetch("data/stations.json").then(function(r){return r.json()}).then(function(d){S=d;console.log(S.length+" stations")}).catch(function(){});
+document.getElementById("go").onclick=doSearch;
+document.getElementById("q").addEventListener("keydown",function(e){if(e.key==="Enter")doSearch()});
+document.getElementById("gps").onclick=useGps;
+document.getElementById("opts-toggle").onclick=function(){document.getElementById("opts-row").classList.toggle("show")};
+document.getElementById("radius").oninput=function(){document.getElementById("radius-val").textContent=this.value;rad=+this.value};
+document.getElementById("fuel").onchange=function(){fuel=this.value};
+document.getElementById("mode").onchange=function(){pm=this.value};
+setupAc("q","ac");
+try{var s=JSON.parse(localStorage.getItem("cerca2"));if(s){if(s.q)document.getElementById("q").value=s.q;if(s.fuel){fuel=s.fuel;document.getElementById("fuel").value=s.fuel}if(s.pm){pm=s.pm;document.getElementById("mode").value=s.pm}if(s.rad){rad=s.rad;document.getElementById("radius").value=s.rad;document.getElementById("radius-val").textContent=s.rad}}}catch(e){}
+});
+function save(){try{localStorage.setItem("cerca2",JSON.stringify({q:document.getElementById("q").value,fuel:fuel,pm:pm,rad:rad}))}catch(e){}}
+function hav(a,b,c,d){var R=6371,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)*Math.sin(dN/2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
+function ptSeg(px,py,ax,ay,bx,by){var dx=bx-ax,dy=by-ay;if(!dx&&!dy)return hav(px,py,ax,ay);var t=((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy);t=Math.max(0,Math.min(1,t));return hav(px,py,ax+t*dx,ay+t*dy)}
+function distPoly(la,ln,cs){var m=Infinity,step=Math.max(1,Math.floor(cs.length/400));for(var i=0;i<cs.length-1;i+=step){var j=Math.min(i+step,cs.length-1);var d=ptSeg(la,ln,cs[i][1],cs[i][0],cs[j][1],cs[j][0]);if(d<m)m=d}return m}
+function geo(q,cb){fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(q)+"&countrycodes=it&limit=1",{headers:{"Accept-Language":"it"}}).then(function(r){return r.json()}).then(function(d){if(d.length)cb(+d[0].lat,+d[0].lon);else cb(null,null)}).catch(function(){cb(null,null)})}
+function useGps(){if(!navigator.geolocation){alert("GPS non disponibile");return}
+navigator.geolocation.getCurrentPosition(function(p){
+fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+p.coords.latitude+"&lon="+p.coords.longitude+"&zoom=16",{headers:{"Accept-Language":"it"}}).then(function(r){return r.json()}).then(function(d){var n=d.display_name?d.display_name.split(",").slice(0,2).join(",").trim():"";document.getElementById("q").value=n;document.getElementById("q").dataset.lat=p.coords.latitude;document.getElementById("q").dataset.lng=p.coords.longitude;doSearch()}).catch(function(){document.getElementById("q").value=p.coords.latitude.toFixed(4)+", "+p.coords.longitude.toFixed(4);document.getElementById("q").dataset.lat=p.coords.latitude;document.getElementById("q").dataset.lng=p.coords.longitude;doSearch()})
+},function(){alert("Impossibile ottenere la posizione")})
+}
+function setupAc(iid,did){var inp=document.getElementById(iid),dd=document.getElementById(did),t;
+inp.addEventListener("input",function(){clearTimeout(t);var v=inp.value.trim();if(v.length<3){dd.classList.remove("show");return}
+t=setTimeout(function(){fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(v)+"&countrycodes=it&limit=5",{headers:{"Accept-Language":"it"}}).then(function(r){return r.json()}).then(function(res){dd.innerHTML="";if(!res.length){dd.classList.remove("show");return}
+res.forEach(function(r){var d=document.createElement("div");d.className="ac-item";d.textContent=r.display_name.substring(0,70);d.addEventListener("click",function(){inp.value=r.display_name.split(",").slice(0,3).join(",").trim();inp.dataset.lat=r.lat;inp.dataset.lng=r.lon;dd.classList.remove("show")});dd.appendChild(d)});dd.classList.add("show")})},400)});
+document.addEventListener("click",function(e){if(!dd.contains(e.target)&&e.target!==inp)dd.classList.remove("show")})}
+function doSearch(){
+var raw=document.getElementById("q").value.trim();if(!raw){alert("Inserisci un luogo");return}
+save();
+var parts=raw.split(/\s*[>\u2192]\s*/);
+if(parts.length>=2&&parts[1].length>=2){doRoute(parts[0].trim(),parts[1].trim())}
+else{doPoint(raw)}
+}
+function doPoint(q){
+var inp=document.getElementById("q");var la=parseFloat(inp.dataset.lat),ln=parseFloat(inp.dataset.lng);
+if(isNaN(la)||isNaN(ln)){geo(q,function(a,b){if(a===null){alert("Luogo non trovato");return}inp.dataset.lat=a;inp.dataset.lng=b;runPoint(a,b)});return}
+runPoint(la,ln);
+}
+function runPoint(la,ln){
+mk.clearLayers();rl.clearLayers();cl.clearLayers();
+cl.addLayer(L.circle([la,ln],{radius:rad*1000,color:"#3f8cff",fillColor:"#3f8cff",fillOpacity:.06,weight:1}));
+map.setView([la,ln],rad<=5?13:rad<=10?12:10);
+var res=[];
+for(var i=0;i<S.length;i++){var s=S[i];if(!s.lat||!s.lng||!s.prezzi||!s.prezzi[fuel])continue;var p=pm==="self"?s.prezzi[fuel].self:s.prezzi[fuel].servito;if(!p||p<=0)continue;var d=hav(la,ln,s.lat,s.lng);if(d<=rad)res.push({s:s,d:d,p:p})}
+res.sort(function(a,b){return a.p-b.p});
+show(res,res.length+" distributori "+fuel+" "+(pm==="self"?"Self":"Servito")+" entro "+rad+" km");
+addMk(res);
+}
+function doRoute(fromQ,toQ){
+document.getElementById("loading").style.display="block";
+document.getElementById("results").innerHTML="";document.getElementById("empty").style.display="none";
+document.getElementById("status").textContent="";document.getElementById("saving").style.display="none";
+var fromInp=document.getElementById("q");
+var fromLa,fromLn,toLa,toLn;
+var done=0,total=2;
+function check(){if(++done<total)return;
+if(isNaN(fromLa)||isNaN(toLa)){document.getElementById("loading").style.display="none";alert("Indirizzo non trovato");return}
+fetchRoute(fromLa,fromLn,toLa,toLn)}
+geo(fromQ,function(a,b){fromLa=a;fromLn=b;check()});
+geo(toQ,function(a,b){toLa=a;toLn=b;check()});
+}
+function fetchRoute(fla,fln,tla,tln){
+fetch("https://router.project-osrm.org/route/v1/driving/"+fln+","+fla+";"+tln+","+tla+"?overview=full&geometries=geojson")
+.then(function(r){return r.json()}).then(function(d){
+document.getElementById("loading").style.display="none";
+if(!d.routes||!d.routes.length){alert("Nessun percorso trovato");return}
+var rt=d.routes[0],cs=rt.geometry.coordinates;
+var km=(rt.distance/1000).toFixed(1),min=Math.round(rt.duration/60);
+mk.clearLayers();rl.clearLayers();cl.clearLayers();
+var ll=cs.map(function(c){return[c[1],c[0]]});
+rl.addLayer(L.polyline(ll,{color:"#3f8cff",weight:4,opacity:.7}));
+mk.addLayer(L.marker([fla,fln],{icon:L.divIcon({className:"",html:'<div style="background:#64e78b;color:#000;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid #fff">A</div>',iconSize:[24,24],iconAnchor:[12,12]})}));
+mk.addLayer(L.marker([tla,tln],{icon:L.divIcon({className:"",html:'<div style="background:#ef4444;color:#fff;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid #fff">B</div>',iconSize:[24,24],iconAnchor:[12,12]})}));
+map.fitBounds(L.polyline(ll).getBounds().pad(.1));
+var dev=rad;
+var res=[];
+for(var i=0;i<S.length;i++){var s=S[i];if(!s.lat||!s.lng||!s.prezzi||!s.prezzi[fuel])continue;var p=pm==="self"?s.prezzi[fuel].self:s.prezzi[fuel].servito;if(!p||p<=0)continue;var dd=distPoly(s.lat,s.lng,cs);if(dd<=dev)res.push({s:s,d:dd,p:p})}
+res.sort(function(a,b){return a.p-b.p});
+show(res,res.length+" distributori "+fuel+" "+(pm==="self"?"Self":"Servito")+" lungo "+km+" km (~"+min+" min), dev. max "+dev+" km");
+addMk(res);
+}).catch(function(e){document.getElementById("loading").style.display="none";alert("Errore: "+e.message)})
+}
+function show(res,label){
+document.getElementById("empty").style.display="none";
+document.getElementById("status").textContent=label;
+if(!res.length){document.getElementById("results").innerHTML='<div class="empty">Nessun risultato. Prova ad allargare il raggio.</div>';document.getElementById("saving").style.display="none";return}
+var best=res[0].p,worst=res[res.length-1].p,diff=((worst-best)*50).toFixed(2);
+var sv=document.getElementById("saving");
+if(worst>best){sv.style.display="block";sv.innerHTML="<b>Risparmio pieno 50L: "+diff+" EUR</b> &#x2014; <span>"+esc(res[0].s.bandiera||res[0].s.gestore)+" "+best.toFixed(3)+" vs "+esc(res[res.length-1].s.bandiera||res[res.length-1].s.gestore)+" "+worst.toFixed(3)+"</span>"}else{sv.style.display="none"}
+var h='<table><thead><tr><th>#</th><th>Distributore</th><th>Km</th><th>Prezzo</th><th></th></tr></thead><tbody>';
+for(var i=0;i<res.length;i++){var r=res[i],s=r.s;
+var cls=i===0?"r1":"";
+var d=(r.p-best);
+var tag=i===0?'<span class="tag tag-best">Migliore</span>':d>.1?'<span class="tag tag-exp">Costoso</span>':"";
+var df=d<.001?"":'<span class="diff">+'+d.toFixed(3)+'</span>';
+h+="<tr><td"+(cls?' class="'+cls+'"':"")+">"+String(i+1)+"</td><td><div class='name'>"+esc(s.bandiera||s.gestore||"N/D")+"</div><div class='addr'>"+esc((s.indirizzo||"").substring(0,50))+"</div></td><td>"+r.d.toFixed(1)+"</td><td class='price'>"+r.p.toFixed(3)+" "+df+"</td><td>"+tag+"</td></tr>"}
+h+="</tbody></table>";
+document.getElementById("results").innerHTML=h}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function addMk(res){if(!res.length)return;var best=res[0].p,worst=res[res.length-1].p,rng=worst-best||1;
+res.forEach(function(r,i){var pct=(r.p-best)/rng;var col=pct<.33?"#22c55e":pct<.66?"#eab308":"#ef4444";
+var m=L.circleMarker([r.s.lat,r.s.lng],{radius:i<3?8:6,fillColor:col,color:i===0?"#fff":col,weight:i===0?2:1,fillOpacity:.85});
+m.bindPopup("<b>"+esc(r.s.bandiera||r.s.gestore)+"</b><br>"+esc(r.s.indirizzo||"")+"<br><b>"+fuel+" "+(pm==="self"?"Self":"Servito")+": "+r.p.toFixed(3)+" EUR/L</b><br>"+r.d.toFixed(1)+" km"+(i===0?"<br><span style='color:#22c55e'>&#x2713; Migliore</span>":""));
+mk.addLayer(m)})}
+})();
+</script>
 </body>
 </html>
