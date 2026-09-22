@@ -3,26 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prezzi Carburanti Italia — Dashboard</title>
+    <title>Prezzi Carburanti Italia &#x2014; Dashboard</title>
     <meta name="description" content="Dashboard interattiva prezzi carburanti in Italia. Medie nazionali, regionali, provinciali. Dati MIMIT aggiornati quotidianamente.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="container header-inner">
             <div class="header-left">
-                <h1>⛽ Prezzi Carburanti Italia</h1>
-                <p class="subtitle">Dati MIMIT • Aggiornamento quotidiano</p>
+                <h1>&#x26FD; Prezzi Carburanti Italia</h1>
+                <p class="subtitle">Dati MIMIT &#x2022; Aggiornamento quotidiano</p>
             </div>
             <div class="header-right">
-                <span id="last-update" class="badge">—</span>
-                <button id="theme-toggle" class="btn-icon" title="Cambia tema">🌙</button>
+                <span id="last-update" class="badge">&#x2014;</span>
+                <button id="theme-toggle" class="btn-icon" title="Cambia tema">&#x1F319;</button>
             </div>
         </div>
     </header>
@@ -36,98 +34,30 @@
 
         <!-- Errore -->
         <div id="error-banner" class="error-banner" style="display:none">
-            <p>⚠️ <span id="error-msg"></span></p>
+            <p>&#x26A0;&#xFE0F; <span id="error-msg"></span></p>
         </div>
 
         <!-- Stats banner -->
         <div id="stats-banner" class="stats-banner" style="display:none">
-            <span>📊 <strong id="stat-impianti">0</strong> distributori</span>
-            <span>💰 <strong id="stat-prezzi">0</strong> prezzi rilevati</span>
+            <span>&#x1F4CA; <strong id="stat-impianti">0</strong> distributori</span>
+            <span>&#x1F4B0; <strong id="stat-prezzi">0</strong> prezzi rilevati</span>
         </div>
 
-        <!-- Zone banner -->
-        <div id="zone-banner" class="zone-banner" style="display:none">
-            <span id="zone-banner-text"></span>
-            <button id="zone-banner-reset" class="btn-sm">X Resetta</button>
-        </div>
+        <!-- Link a Cerca Distributore -->
+        <a href="cerca.html" id="cerca-link" class="cerca-link" style="display:none">
+            &#x1F50D; Cerca il distributore piu economico vicino a te &#x2192;
+        </a>
 
-        <!-- Sezione 1: Card nazionali -->
+        <!-- Card nazionali -->
         <section id="national-cards" class="section">
-            <h2>📊 Panoramica Nazionale <small>(self-service)</small></h2>
+            <h2>&#x1F4CA; Panoramica Nazionale <small>(self-service)</small></h2>
             <div class="cards-grid" id="cards-container"></div>
         </section>
 
-        <!-- Sezione Preferiti -->
-        <section class="section" id="favorites-section">
-            <div class="section-header">
-                <h2>⭐ I Miei Distributori</h2>
-                <button class="btn-sm" id="add-fav-btn">+ Aggiungi</button>
-            </div>
-            <div id="fav-empty" class="fav-empty">
-                <p>Nessun distributore salvato. Clicca <strong>+ Aggiungi</strong> per cercare e salvare i tuoi distributori preferiti.</p>
-            </div>
-            <div id="fav-list" class="fav-list"></div>
-
-            <!-- Modal ricerca distributore -->
-            <div id="fav-modal" class="modal-overlay" style="display:none">
-                <div class="modal">
-                    <div class="modal-header">
-                        <h3>Cerca distributore</h3>
-                        <button id="fav-modal-close" class="btn-icon">✕</button>
-                    </div>
-                    <div class="search-box">
-                        <input type="text" id="station-search-input" placeholder="Nome, gestore, indirizzo o città..." autocomplete="off">
-                    </div>
-                    <div id="station-search-results" class="station-results"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Sezione Mappa -->
-        <section class="section" id="map-section">
-            <div class="section-header">
-                <h2>🗺️ Mappa Distributori</h2>
-                <div class="map-controls">
-                    <button class="btn-sm" id="geolocate-btn" title="Usa la mia posizione">📍 Posizione</button>
-                    <div class="search-box search-box-inline">
-                        <input type="text" id="map-search-input" placeholder="Cerca città o indirizzo..." autocomplete="off">
-                    </div>
-                </div>
-            </div>
-            <div id="map-container" class="map-container">
-                <div id="map" style="width:100%; height:100%;"></div>
-            </div>
-            <p class="hint" id="map-hint">Clicca su un distributore per vedere prezzi e dettagli. I tuoi preferiti sono evidenziati con ⭐</p>
-        </section>
-
-        <!-- Sezione Tratta Casa-Lavoro -->
-        <section class="section" id="route-section">
-            <h2>&#x1F6E3; Tratta Casa-Lavoro</h2>
-            <p class="hint">Inserisci partenza e arrivo per trovare i distributori lungo il percorso e stimare il risparmio</p>
-            <div class="route-inputs">
-                <div class="route-field">
-                    <label>Partenza</label>
-                    <input type="text" id="route-from" placeholder="Es. San Sperate, Cagliari..." autocomplete="off">
-                </div>
-                <div class="route-field">
-                    <label>Arrivo</label>
-                    <input type="text" id="route-to" placeholder="Es. Cagliari, Milano..." autocomplete="off">
-                </div>
-                <button class="btn-sm route-go-btn" id="route-go">Cerca distributori</button>
-            </div>
-            <div id="route-status" class="route-status" style="display:none"></div>
-            <div id="route-savings" class="route-savings" style="display:none"></div>
-            <div id="route-results" class="route-results" style="display:none">
-                <div class="table-responsive">
-                    <table class="data-table" id="route-table"></table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Sezione 2: Grafico trend -->
+        <!-- Grafico trend -->
         <section class="section">
             <div class="section-header">
-                <h2>📈 Trend Prezzi</h2>
+                <h2>&#x1F4C8; Trend Prezzi</h2>
                 <div class="btn-group" id="trend-period">
                     <button class="btn-sm" data-days="30">30gg</button>
                     <button class="btn-sm active" data-days="60">60gg</button>
@@ -140,21 +70,21 @@
             <div class="chart-legend" id="chart-legend"></div>
         </section>
 
-        <!-- Sezione 3: Tabella regionale -->
+        <!-- Tabella regionale -->
         <section class="section">
-            <h2>🗺️ Prezzi per Regione</h2>
+            <h2>&#x1F5FA;&#xFE0F; Prezzi per Regione</h2>
             <p class="hint">Clicca su una regione per vedere le province</p>
             <div class="table-responsive">
                 <table id="regional-table" class="data-table">
                     <thead>
                         <tr>
-                            <th data-sort="name">Regione ▿</th>
-                            <th data-sort="benzina">Benzina ▿</th>
-                            <th data-sort="benzina_var">Δ gg</th>
-                            <th data-sort="gasolio">Gasolio ▿</th>
-                            <th data-sort="gasolio_var">Δ gg</th>
-                            <th data-sort="gpl">GPL ▿</th>
-                            <th data-sort="metano">Metano ▿</th>
+                            <th data-sort="name">Regione &#x25BF;</th>
+                            <th data-sort="benzina">Benzina &#x25BF;</th>
+                            <th data-sort="benzina_var">&#x394; gg</th>
+                            <th data-sort="gasolio">Gasolio &#x25BF;</th>
+                            <th data-sort="gasolio_var">&#x394; gg</th>
+                            <th data-sort="gpl">GPL &#x25BF;</th>
+                            <th data-sort="metano">Metano &#x25BF;</th>
                         </tr>
                     </thead>
                     <tbody id="regional-body"></tbody>
@@ -162,11 +92,11 @@
             </div>
         </section>
 
-        <!-- Sezione 4: Drill-down provinciale -->
+        <!-- Drill-down provinciale -->
         <section id="province-section" class="section" style="display:none">
             <div class="section-header">
-                <h2 id="province-title">Province di —</h2>
-                <button id="province-close" class="btn-sm">✕ Chiudi</button>
+                <h2 id="province-title">Province di &#x2014;</h2>
+                <button id="province-close" class="btn-sm">&#x2715; Chiudi</button>
             </div>
             <div class="table-responsive">
                 <table class="data-table">
@@ -183,16 +113,6 @@
                 </table>
             </div>
         </section>
-
-        <!-- Sezione 5: Ricerca comune -->
-        <section class="section">
-            <h2>🔍 Cerca per Comune</h2>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Digita il nome del comune..." autocomplete="off">
-                <div id="search-results" class="search-dropdown"></div>
-            </div>
-            <div id="comune-detail" class="comune-detail" style="display:none"></div>
-        </section>
     </main>
 
     <!-- Footer -->
@@ -200,8 +120,9 @@
         <div class="container">
             <p>
                 Dati: <a href="https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti" target="_blank" rel="noopener">MIMIT Open Data</a>
-                — Licenza IODL 2.0
-                — <a href="https://samuelecorona.it" target="_blank" rel="noopener">samuelecorona.it</a>
+                &#x2014; Licenza IODL 2.0
+                &#x2014; <a href="cerca.html">Cerca Distributore</a>
+                &#x2014; <a href="https://samuelecorona.it" target="_blank" rel="noopener">samuelecorona.it</a>
             </p>
         </div>
     </footer>
