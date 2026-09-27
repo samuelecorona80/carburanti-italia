@@ -13,13 +13,13 @@
 :root{color-scheme:dark;--bg:#0a0f18;--panel:#111925;--panel2:#151f2d;--line:#253247;--text:#f5f7fa;--muted:#8fa0b5;--blue:#4f8cff;--green:#52d681;--red:#ef6464;--amber:#f1b84b}
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#142139 0,#0a0f18 38%);color:var(--text);min-height:100vh}
 button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;padding:18px 16px 44px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 18px}.brand{font-size:18px;font-weight:800;letter-spacing:-.35px}.brand span{color:var(--green)}.top a{color:var(--muted);font-size:13px;text-decoration:none}.hero{margin:10px 0 18px}.hero h1{font-size:clamp(30px,8vw,46px);line-height:1.03;letter-spacing:-1.6px;margin:0 0 10px;max-width:650px}.hero p{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:600px}.search-card{background:rgba(17,25,37,.95);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 18px 55px rgba(0,0,0,.22)}
-.location-row{display:grid;grid-template-columns:46px 1fr;gap:8px}.icon-btn,.primary,.secondary,.chip,.map-toggle,.route-toggle{border:0;cursor:pointer}.icon-btn{height:50px;border-radius:14px;background:#1b2940;color:#81aaff;font-size:19px}.field-wrap{position:relative}.field{width:100%;height:50px;border:1px solid #2b3a50;background:#0d141f;color:var(--text);border-radius:14px;padding:0 14px;font-size:16px;outline:none}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}.ac{position:absolute;top:54px;left:0;right:0;background:#101925;border:1px solid #2b3a50;border-radius:14px;overflow:hidden;z-index:40;display:none;box-shadow:0 18px 50px rgba(0,0,0,.4)}.ac.show{display:block}.ac-item{padding:11px 13px;color:#dce5f1;font-size:13px;line-height:1.35;border-bottom:1px solid #1c293b;cursor:pointer}.ac-item:last-child{border-bottom:0}
+.location-row{display:grid;grid-template-columns:46px 1fr;gap:8px}.favorite-locations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}.favorite-location{position:relative;min-width:0}.fav-location-btn{width:100%;height:38px;border:1px solid #29384d;background:#0d141f;color:#aebdd0;border-radius:11px;padding:0 23px 0 9px;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.fav-location-btn.saved{color:#dce9fb;border-color:#365070;background:#132033}.fav-location-btn.empty{color:#71849c;border-style:dashed}.fav-location-remove{position:absolute;right:4px;top:7px;width:24px;height:24px;border:0;background:transparent;color:#71849c;font-size:15px;cursor:pointer;border-radius:7px}.fav-location-remove:hover{background:#223148;color:#fff}.icon-btn,.primary,.secondary,.chip,.map-toggle,.route-toggle{border:0;cursor:pointer}.icon-btn{height:50px;border-radius:14px;background:#1b2940;color:#81aaff;font-size:19px}.field-wrap{position:relative}.field{width:100%;height:50px;border:1px solid #2b3a50;background:#0d141f;color:var(--text);border-radius:14px;padding:0 14px;font-size:16px;outline:none}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}.ac{position:absolute;top:54px;left:0;right:0;background:#101925;border:1px solid #2b3a50;border-radius:14px;overflow:hidden;z-index:40;display:none;box-shadow:0 18px 50px rgba(0,0,0,.4)}.ac.show{display:block}.ac-item{padding:11px 13px;color:#dce5f1;font-size:13px;line-height:1.35;border-bottom:1px solid #1c293b;cursor:pointer}.ac-item:last-child{border-bottom:0}
 .filter-summary-row{margin-top:10px}.filters-toggle{width:100%;min-height:44px;border:1px solid #29384d;background:#0d141f;color:#d8e2ef;border-radius:13px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;text-align:left}.filters-toggle strong{font-size:12px;color:#8eb7ff;white-space:nowrap}.filter-summary{font-size:12px;color:#a8b8cb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.filter-caret{font-size:17px;color:#6f829a;transition:transform .18s ease}.filters-toggle.open .filter-caret{transform:rotate(180deg)}.filters-panel{display:none;margin-top:10px;padding:3px 2px 2px;border-top:1px solid #202d40}.filters-panel.show{display:block}.label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;color:#6f829a;margin:16px 0 8px}.fuel-row,.radius-row,.mode-row{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid #29384d;background:#0d141f;color:#aebdd0;border-radius:999px;padding:9px 13px;font-size:13px;font-weight:700}.chip.active{background:#173764;border-color:#376ebf;color:#fff}.radius-row .chip.active{background:#173b29;border-color:#2c7449;color:#dff9e8}.mode-row .chip.active{background:#30261b;border-color:#73542d;color:#ffe4b2}.brand-select{width:100%;height:44px;border:1px solid #29384d;background:#0d141f;color:#dce5f1;border-radius:12px;padding:0 12px;outline:none}.brand-select:focus{border-color:var(--blue)}.primary{width:100%;height:52px;border-radius:14px;margin-top:12px;background:linear-gradient(135deg,#3478f6,#5a91ff);color:white;font-weight:800;font-size:15px;box-shadow:0 10px 28px rgba(52,120,246,.22)}.primary:disabled{opacity:.55;cursor:wait}.sub-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}.route-toggle,.map-toggle{background:transparent;color:#7fa9ee;font-size:12px;padding:6px 0}.data-note{font-size:11px;color:#65758a;text-align:right}
 .route-box{display:none;border-top:1px solid #233149;margin-top:12px;padding-top:12px}.route-box.show{display:block}.route-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.route-grid .field{height:46px;font-size:14px}.secondary{width:100%;height:44px;margin-top:9px;background:#1c2a3e;color:#dce8fb;border-radius:12px;font-weight:700}
 #loading{display:none;color:var(--muted);font-size:13px;padding:18px 4px}.summary{display:none;margin:18px 0 10px;padding:14px 15px;background:linear-gradient(135deg,rgba(82,214,129,.11),rgba(79,140,255,.08));border:1px solid rgba(82,214,129,.25);border-radius:16px}.summary.show{display:block}.summary-title{font-size:13px;color:#dbe7f4}.summary-title strong{font-size:20px;color:var(--green);display:block;margin-top:3px}.summary-meta{margin-top:7px;font-size:12px;color:var(--muted);line-height:1.5}
-.results-head{display:none;align-items:end;justify-content:space-between;gap:12px;margin:22px 1px 9px}.results-head.show{display:flex}.results-head h2{font-size:17px;margin:0}.results-head span{font-size:11px;color:var(--muted);text-align:right}.results{display:grid;gap:9px}.result{background:rgba(17,25,37,.92);border:1px solid #202e42;border-radius:17px;padding:13px}.result.best{border-color:rgba(82,214,129,.46);box-shadow:inset 3px 0 0 var(--green)}.result-top{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}.station{font-weight:750;font-size:15px;line-height:1.25}.addr{font-size:11px;color:var(--muted);line-height:1.45;margin-top:4px}.price{text-align:right;font-size:22px;font-weight:800;letter-spacing:-.6px}.price small{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0;margin-top:1px}.result-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid #1d2a3c}.metrics{display:flex;gap:12px;flex-wrap:wrap}.metric{font-size:11px;color:#8799ae}.metric b{display:block;font-size:12px;color:#dce5f1;margin-bottom:2px}.metric.delta b{color:#ffc76e}.metric.best-delta b{color:var(--green)}.maps{display:inline-flex;align-items:center;text-decoration:none;background:#18263a;color:#9fc0f8;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.favorite-stations-block{display:none;margin:18px 0 6px}.favorite-stations-block.show{display:block}.favorite-stations-title{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:#7f91a8;font-weight:800;margin:0 1px 8px}.favorite-stations{display:grid;gap:7px}.favorite-station{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;background:rgba(17,25,37,.88);border:1px solid #2a3a51;border-radius:14px;padding:10px}.favorite-station-name{font-size:13px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.favorite-station-meta{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.favorite-station-price{font-size:14px;font-weight:800;color:#dfe9f6;text-align:right}.favorite-station-price small{display:block;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px}.results-head{display:none;align-items:end;justify-content:space-between;gap:12px;margin:22px 1px 9px}.results-head.show{display:flex}.results-head h2{font-size:17px;margin:0}.results-head span{font-size:11px;color:var(--muted);text-align:right}.results{display:grid;gap:9px}.result{background:rgba(17,25,37,.92);border:1px solid #202e42;border-radius:17px;padding:13px}.result.best{border-color:rgba(82,214,129,.46);box-shadow:inset 3px 0 0 var(--green)}.result-top{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}.station-title-row{display:flex;align-items:flex-start;gap:8px}.fav-star{flex:0 0 auto;width:28px;height:28px;border:1px solid #314159;background:#121c2a;color:#7f91a8;border-radius:9px;font-size:17px;line-height:1;cursor:pointer;padding:0}.fav-star.active{color:#ffd166;border-color:#7a6130;background:#302719}.station{font-weight:750;font-size:15px;line-height:1.25}.addr{font-size:11px;color:var(--muted);line-height:1.45;margin-top:4px}.price{text-align:right;font-size:22px;font-weight:800;letter-spacing:-.6px}.price small{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0;margin-top:1px}.result-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid #1d2a3c}.metrics{display:flex;gap:12px;flex-wrap:wrap}.metric{font-size:11px;color:#8799ae}.metric b{display:block;font-size:12px;color:#dce5f1;margin-bottom:2px}.metric.delta b{color:#ffc76e}.metric.best-delta b{color:var(--green)}.maps{display:inline-flex;align-items:center;text-decoration:none;background:#18263a;color:#9fc0f8;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;white-space:nowrap}
 .map-wrap{display:none;margin-top:12px;border:1px solid #24334a;border-radius:18px;overflow:hidden}.map-wrap.show{display:block}#map{height:300px;width:100%}.empty{display:none;text-align:center;color:var(--muted);padding:36px 16px;font-size:14px}.empty.show{display:block}.footer{margin-top:34px;text-align:center;font-size:11px;color:#5e7086;line-height:1.6}.footer a{color:#748ca9;text-decoration:none}
-@media(max-width:520px){.shell{padding:13px 11px 38px}.hero{margin-top:2px}.hero h1{font-size:34px}.search-card{border-radius:19px;padding:12px}.result{padding:12px}.price{font-size:20px}.result-bottom{align-items:flex-end}.metrics{gap:9px}.route-grid{grid-template-columns:1fr}.data-note{display:none}}
+@media(max-width:520px){.shell{padding:13px 11px 38px}.hero{margin-top:2px}.hero h1{font-size:34px}.search-card{border-radius:19px;padding:12px}.favorite-locations{gap:5px}.fav-location-btn{font-size:10px;padding-left:7px}.result{padding:12px}.price{font-size:20px}.result-bottom{align-items:flex-end}.metrics{gap:9px}.route-grid{grid-template-columns:1fr}.data-note{display:none}}
 </style>
 </head>
 <body>
@@ -42,6 +42,7 @@ button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;paddin
       <div class="ac" id="ac"></div>
     </div>
   </div>
+  <div class="favorite-locations" id="favorite-locations"></div>
 
   <div class="filter-summary-row">
     <button class="filters-toggle" id="filters-toggle" aria-expanded="false">
@@ -99,6 +100,11 @@ button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;paddin
 <div id="loading">Sto cercando i distributori e confrontando i prezzi…</div>
 <div class="summary" id="summary"></div>
 
+<section class="favorite-stations-block" id="favorite-stations-block">
+  <div class="favorite-stations-title">★ Distributori preferiti</div>
+  <div class="favorite-stations" id="favorite-stations"></div>
+</section>
+
 <div class="results-head" id="results-head">
   <h2>Più convenienti</h2>
   <span id="results-count"></span>
@@ -125,6 +131,8 @@ var fuel = "Gasolio";
 var radius = 5;
 var mode = "self";
 var brandFilter = "";
+var favoriteLocations = [null,null,null];
+var favoriteStationIds = [];
 var lastResults = [];
 var lastCenter = null;
 var map = null;
@@ -146,15 +154,21 @@ var filtersToggle = document.getElementById("filters-toggle");
 var filtersPanel = document.getElementById("filters-panel");
 var filterSummary = document.getElementById("filter-summary");
 var brandSelect = document.getElementById("brand-select");
+var favoriteLocationsEl = document.getElementById("favorite-locations");
+var favoriteStationsBlock = document.getElementById("favorite-stations-block");
+var favoriteStationsEl = document.getElementById("favorite-stations");
+
+loadFavorites();
+renderFavoriteLocations();
 
 fetch("data/stations.json")
   .then(function(r){ if(!r.ok) throw new Error("Dati non disponibili"); return r.json(); })
-  .then(function(d){ stations = d; populateBrands(); restore(); updateFilterSummary(); })
+  .then(function(d){ stations = d; populateBrands(); restore(); updateFilterSummary(); renderFavoriteStations(); })
   .catch(function(){ empty.textContent = "Impossibile caricare i dati dei distributori."; empty.classList.add("show"); });
 
-bindChips("fuel-row","fuel",function(v){ fuel=v; updateFilterSummary(); });
+bindChips("fuel-row","fuel",function(v){ fuel=v; updateFilterSummary(); renderFavoriteStations(); });
 bindChips("radius-row","radius",function(v){ radius=+v; updateFilterSummary(); });
-bindChips("mode-row","mode",function(v){ mode=v; updateFilterSummary(); });
+bindChips("mode-row","mode",function(v){ mode=v; updateFilterSummary(); renderFavoriteStations(); });
 
 filtersToggle.onclick=function(){
   var open=!filtersPanel.classList.contains("show");
@@ -165,6 +179,7 @@ filtersToggle.onclick=function(){
 brandSelect.onchange=function(){
   brandFilter=this.value;
   updateFilterSummary();
+  renderFavoriteStations();
   save();
 };
 
@@ -178,12 +193,166 @@ document.getElementById("route-toggle").onclick=function(){
 };
 document.getElementById("route-search").onclick=searchRoute;
 
+function favoriteStarClick(e){
+  var btn=e.target.closest(".fav-star");
+  if(!btn)return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleStationFavorite(btn.dataset.stationId);
+}
+resultsEl.addEventListener("click",favoriteStarClick);
+favoriteStationsEl.addEventListener("click",favoriteStarClick);
+
 mapToggle.onclick=function(){
   var open=!mapWrap.classList.contains("show");
   mapWrap.classList.toggle("show",open);
   mapToggle.textContent=open?"Nascondi mappa":"Mostra sulla mappa";
   if(open){ ensureMap(); drawMap(); setTimeout(function(){map.invalidateSize();},50); }
 };
+
+function loadFavorites(){
+  try{
+    var locs=JSON.parse(localStorage.getItem("fuel-favorite-locations-v1")||"null");
+    if(Array.isArray(locs)){
+      favoriteLocations=[locs[0]||null,locs[1]||null,locs[2]||null];
+    }
+  }catch(e){}
+  try{
+    var ids=JSON.parse(localStorage.getItem("fuel-favorite-stations-v1")||"[]");
+    if(Array.isArray(ids)) favoriteStationIds=ids.map(String).slice(0,3);
+  }catch(e){}
+}
+
+function persistFavorites(){
+  try{localStorage.setItem("fuel-favorite-locations-v1",JSON.stringify(favoriteLocations));}catch(e){}
+  try{localStorage.setItem("fuel-favorite-stations-v1",JSON.stringify(favoriteStationIds));}catch(e){}
+}
+
+function renderFavoriteLocations(){
+  favoriteLocationsEl.innerHTML="";
+  for(var i=0;i<3;i++){
+    (function(slot){
+      var item=document.createElement("div");
+      item.className="favorite-location";
+      var fav=favoriteLocations[slot];
+      var btn=document.createElement("button");
+      btn.className="fav-location-btn "+(fav?"saved":"empty");
+      btn.textContent=fav?("★ "+fav.label):("+ Preferito "+(slot+1));
+      btn.title=fav?(fav.address||fav.label):"Salva qui la posizione corrente";
+      btn.onclick=function(){fav?useFavoriteLocation(slot):saveFavoriteLocation(slot);};
+      item.appendChild(btn);
+      if(fav){
+        var remove=document.createElement("button");
+        remove.className="fav-location-remove";
+        remove.textContent="×";
+        remove.title="Rimuovi preferito";
+        remove.onclick=function(e){
+          e.stopPropagation();
+          favoriteLocations[slot]=null;
+          persistFavorites();
+          renderFavoriteLocations();
+        };
+        item.appendChild(remove);
+      }
+      favoriteLocationsEl.appendChild(item);
+    })(i);
+  }
+}
+
+function saveFavoriteLocation(slot){
+  var q=place.value.trim();
+  var lat=+place.dataset.lat,lng=+place.dataset.lng;
+  function finish(a,b){
+    var suggested=(q||"Preferito "+(slot+1)).split(",")[0].trim();
+    var label=window.prompt("Nome della posizione preferita",suggested);
+    if(label===null)return;
+    label=label.trim()||("Preferito "+(slot+1));
+    favoriteLocations[slot]={label:label.slice(0,24),address:q||label,lat:+a,lng:+b};
+    persistFavorites();
+    renderFavoriteLocations();
+  }
+  if(Number.isFinite(lat)&&Number.isFinite(lng)){finish(lat,lng);return;}
+  if(q.length<2){alert("Inserisci prima una posizione o usa il GPS.");return;}
+  setBusy(true,"Salvo la posizione…");
+  geocode(q,function(a,b){
+    setBusy(false);
+    if(a===null){alert("Non riesco a trovare questa posizione.");return;}
+    place.dataset.lat=a;place.dataset.lng=b;
+    finish(a,b);
+  });
+}
+
+function useFavoriteLocation(slot){
+  var fav=favoriteLocations[slot];if(!fav)return;
+  place.value=fav.address||fav.label;
+  place.dataset.lat=fav.lat;
+  place.dataset.lng=fav.lng;
+  save();
+  if(stations.length)runPoint(+fav.lat,+fav.lng);
+}
+
+function isStationFavorite(id){
+  return favoriteStationIds.indexOf(String(id))!==-1;
+}
+
+function toggleStationFavorite(id){
+  id=String(id);
+  var pos=favoriteStationIds.indexOf(id);
+  if(pos!==-1){
+    favoriteStationIds.splice(pos,1);
+  }else{
+    if(favoriteStationIds.length>=3){
+      alert("Puoi salvare al massimo 3 distributori preferiti.");
+      return;
+    }
+    favoriteStationIds.push(id);
+  }
+  persistFavorites();
+  updateStationStars();
+  renderFavoriteStations();
+}
+
+function updateStationStars(){
+  document.querySelectorAll(".fav-star[data-station-id]").forEach(function(btn){
+    var on=isStationFavorite(btn.dataset.stationId);
+    btn.classList.toggle("active",on);
+    btn.textContent=on?"★":"☆";
+    btn.title=on?"Rimuovi dai preferiti":"Aggiungi ai preferiti";
+  });
+}
+
+function renderFavoriteStations(){
+  if(!stations.length||!favoriteStationIds.length){
+    favoriteStationsBlock.classList.remove("show");
+    favoriteStationsEl.innerHTML="";
+    return;
+  }
+  var valid=[];
+  favoriteStationsEl.innerHTML="";
+  favoriteStationIds.forEach(function(id){
+    var s=stations.find(function(x){return String(x.id)===String(id);});
+    if(!s)return;
+    valid.push(String(id));
+    var p=getPrice(s);
+    var d=lastCenter&&s.lat&&s.lng?haversine(lastCenter.lat,lastCenter.lng,s.lat,s.lng):null;
+    var name=escapeHtml(s.bandiera||s.gestore||s.nome||"Distributore");
+    var addr=escapeHtml([s.indirizzo,s.comune].filter(Boolean).join(", "));
+    var maps="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(s.lat+","+s.lng);
+    var row=document.createElement("div");
+    row.className="favorite-station";
+    row.innerHTML=
+      '<button class="fav-star active" data-station-id="'+escapeHtml(String(s.id))+'" title="Rimuovi dai preferiti">★</button>'+
+      '<div><div class="favorite-station-name">'+name+'</div><div class="favorite-station-meta">'+addr+(d!==null?" · "+d.toFixed(1)+" km":"")+'</div></div>'+
+      '<div><div class="favorite-station-price">'+(p?p.toFixed(3)+" €/L":"n.d.")+'<small>'+fuel+" · "+(mode==="self"?"Self":"Servito")+'</small></div>'+
+      '<a class="maps" target="_blank" rel="noopener" href="'+maps+'" style="margin-top:6px">Vai</a></div>';
+    favoriteStationsEl.appendChild(row);
+  });
+  if(valid.length!==favoriteStationIds.length){
+    favoriteStationIds=valid.slice(0,3);
+    persistFavorites();
+  }
+  favoriteStationsBlock.classList.toggle("show",valid.length>0);
+}
 
 function bindChips(id,key,setter){
   document.getElementById(id).addEventListener("click",function(e){
@@ -277,6 +446,7 @@ function searchPoint(){
 
 function runPoint(lat,lng){
   lastCenter={lat:lat,lng:lng};
+  renderFavoriteStations();
   var list=[];
   for(var i=0;i<stations.length;i++){
     var s=stations[i],p=getPrice(s); if(!p||!s.lat||!s.lng||!brandMatches(s))continue;
@@ -322,7 +492,7 @@ function showResults(list,label){
     var card=document.createElement("article");
     card.className="result"+(i===0?" best":"");
     card.innerHTML=
-      '<div class="result-top"><div><div class="station">'+name+'</div><div class="addr">'+addr+'</div></div>'+
+      '<div class="result-top"><div><div class="station-title-row"><button class="fav-star '+(isStationFavorite(s.id)?"active":"")+'" data-station-id="'+escapeHtml(String(s.id))+'" title="'+(isStationFavorite(s.id)?"Rimuovi dai preferiti":"Aggiungi ai preferiti")+'">'+(isStationFavorite(s.id)?"★":"☆")+'</button><div><div class="station">'+name+'</div><div class="addr">'+addr+'</div></div></div></div>'+
       '<div class="price">'+r.price.toFixed(3)+'<small>€/L</small></div></div>'+
       '<div class="result-bottom"><div class="metrics">'+
       '<div class="metric"><b>'+r.distance.toFixed(1)+' km</b>distanza</div>'+
@@ -356,6 +526,7 @@ function searchRoute(){
         }
         list.sort(function(x,y){return x.price-y.price||x.distance-y.distance;});
         lastCenter=null;
+        renderFavoriteStations();
         lastResults=list;
         showResults(list,fuel+" "+(mode==="self"?"Self":"Servito")+" lungo il percorso, max "+radius+" km di deviazione"+(brandFilter?" · "+brandFilter:""));
         ensureMap(); routes.clearLayers();
