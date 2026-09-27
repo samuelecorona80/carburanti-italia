@@ -191,6 +191,7 @@ var resultDistanceLabel = "distanza";
 var routeLimit = "route";
 var historySummary = {};
 var historySummaryReady = false;
+var historySummaryPromise = null;
 var sortMode = "personal";
 var lastResultsLabel = "";
 
@@ -236,14 +237,6 @@ fetch("data/stations.json")
   .then(function(r){ if(!r.ok) throw new Error("Dati non disponibili"); return r.json(); })
   .then(function(d){
     stations = d; populateBrands(); restore(); updateFilterSummary(); renderFavoriteStations();
-    fetch("data/station_history_summary.json")
-      .then(function(r){if(!r.ok)throw new Error("summary");return r.json();})
-      .then(function(x){
-        historySummary=(x&&x.stations)||{};
-        historySummaryReady=true;
-        if(lastResults.length)showResults(lastResults,lastResultsLabel,true);
-      })
-      .catch(function(){historySummaryReady=false;});
   })
   .catch(function(){ empty.textContent = "Impossibile caricare i dati dei distributori."; empty.classList.add("show"); });
 
@@ -578,6 +571,23 @@ function getPrice(s){
   return p&&p>0?p:null;
 }
 
+function loadHistorySummary(){
+  if(historySummaryReady)return Promise.resolve(historySummary);
+  if(historySummaryPromise)return historySummaryPromise;
+  historySummaryPromise=fetch("data/station_history_summary.json",{cache:"default"})
+    .then(function(r){if(!r.ok)throw new Error("summary");return r.json();})
+    .then(function(x){
+      historySummary=(x&&x.stations)||{};
+      historySummaryReady=true;
+      return historySummary;
+    })
+    .catch(function(){
+      historySummaryReady=false;
+      return {};
+    });
+  return historySummaryPromise;
+}
+
 function historicalMetrics(s){
   var rec=historySummary[String(s.id)];
   var point=rec&&rec[historyKey()];
@@ -658,6 +668,12 @@ function showResults(list,label,keepScroll){
   head.classList.add("show");
   sortRow.classList.add("show");
   count.textContent=list.length+" risultati · "+label;
+
+  if(!historySummaryReady){
+    loadHistorySummary().then(function(){
+      if(historySummaryReady&&lastResults.length)showResults(lastResults,lastResultsLabel,true);
+    });
+  }
 
   list.forEach(function(r,i){
     var s=r.station,delta=r.price-best,extra50=delta*50;
