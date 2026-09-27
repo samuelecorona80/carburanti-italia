@@ -2,21 +2,27 @@ name: Aggiornamento Prezzi Carburanti
 
 on:
   schedule:
-    # Ogni giorno alle 7:00 UTC (= 9:00 ora italiana, dopo pubblicazione MIMIT alle 8)
+    # 07:00 UTC = 09:00 CEST / 08:00 CET
     - cron: '0 7 * * *'
-  workflow_dispatch: # Trigger manuale
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - 'etl/**'
+      - 'requirements.txt'
       - '.github/workflows/daily_update.yml'
 
 permissions:
   contents: write
 
+concurrency:
+  group: carburanti-data-update
+  cancel-in-progress: true
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -38,23 +44,35 @@ jobs:
       - name: Build station history
         run: python etl/build_station_history.py
 
-      - name: Copy data to site
-        run: |
-          mkdir -p site/data
-          cp data/latest.json site/data/
-          cp data/history.json site/data/
-          cp data/last_update.json site/data/
+      - name: Validate generated data
+        run: python etl/validate_generated_data.py
 
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ site/data/
+
           if git diff --staged --quiet; then
             echo "No data changes to publish"
             exit 0
           fi
+
           git commit -m "Aggiornamento prezzi $(date +%Y-%m-%d)"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+
+          for attempt in 1 2 3; do
+            echo "Push attempt $attempt/3"
+            git fetch origin main
+            git rebase origin/main
+
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 2))
+            fi
+          done
+
+          echo "Unable to publish data after 3 attempts"
+          exit 1
