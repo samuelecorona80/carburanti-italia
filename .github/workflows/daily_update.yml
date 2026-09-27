@@ -5,6 +5,11 @@ on:
     # Ogni giorno alle 7:00 UTC (= 9:00 ora italiana, dopo pubblicazione MIMIT alle 8)
     - cron: '0 7 * * *'
   workflow_dispatch: # Trigger manuale
+  push:
+    branches: [main]
+    paths:
+      - 'etl/**'
+      - '.github/workflows/daily_update.yml'
 
 permissions:
   contents: write
@@ -15,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -27,6 +34,9 @@ jobs:
 
       - name: Run ETL
         run: python etl/fetch_and_process.py
+
+      - name: Build station history
+        run: python etl/build_station_history.py
 
       - name: Copy data to site
         run: |
