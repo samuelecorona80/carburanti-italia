@@ -797,8 +797,19 @@ function searchRoute(){
           }
           ensureMap();routes.clearLayers();
           var ll=coords.map(function(c){return[c[1],c[0]];});
-          routes.addLayer(L.polyline(ll,{color:"#4f8cff",weight:4,opacity:.75}));
-          if(mapWrap.classList.contains("show")){drawMap(false);map.fitBounds(L.polyline(ll).getBounds().pad(.12));}
+          var routeLine=L.polyline(ll,{color:"#4f8cff",weight:4,opacity:.82});
+          routes.addLayer(routeLine);
+          routes.addLayer(L.circleMarker([a.lat,a.lng],{radius:7,color:"#ffffff",weight:2,fillColor:"#4f8cff",fillOpacity:1}).bindTooltip("Partenza",{direction:"top"}));
+          routes.addLayer(L.circleMarker([b.lat,b.lng],{radius:7,color:"#ffffff",weight:2,fillColor:"#52d681",fillOpacity:1}).bindTooltip("Arrivo",{direction:"top"}));
+          mapWrap.classList.add("show");
+          mapToggle.style.display="inline-block";
+          mapToggle.textContent="Nascondi mappa";
+          drawMap(false);
+          setTimeout(function(){
+            map.invalidateSize();
+            map.fitBounds(routeLine.getBounds().pad(.12));
+            mapWrap.scrollIntoView({behavior:"smooth",block:"nearest"});
+          },80);
         });
       });
   }).catch(function(e){
