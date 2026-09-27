@@ -31,7 +31,7 @@ URLS = {
 }
 
 HEADERS = {
-    "User-Agent": "CarburantiItalia-Dashboard/1.0 (+https://github.com/samuelecorona/carburanti-italia)"
+    "User-Agent": "CarburantiItalia-Dashboard/1.0 (+https://github.com/samuelecorona80/carburanti-italia)"
 }
 
 MAX_RETRIES = 3
