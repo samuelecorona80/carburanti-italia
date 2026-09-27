@@ -97,8 +97,14 @@ button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;paddin
 
   <div class="route-box" id="route-box">
     <div class="route-grid">
-      <input class="field" id="from" placeholder="Partenza">
-      <input class="field" id="to" placeholder="Destinazione">
+      <div class="field-wrap">
+        <input class="field" id="from" placeholder="Partenza" autocomplete="off">
+        <div class="ac" id="from-ac"></div>
+      </div>
+      <div class="field-wrap">
+        <input class="field" id="to" placeholder="Destinazione" autocomplete="off">
+        <div class="ac" id="to-ac"></div>
+      </div>
     </div>
     <button class="secondary" id="route-search">Cerca distributori lungo il percorso</button>
   </div>
@@ -163,6 +169,7 @@ var map = null;
 var markers = null;
 var circles = null;
 var routes = null;
+var resultDistanceLabel = "distanza";
 
 var place = document.getElementById("place");
 var searchBtn = document.getElementById("search");
@@ -218,6 +225,12 @@ searchBtn.onclick = searchPoint;
 place.addEventListener("keydown",function(e){ if(e.key==="Enter") searchPoint(); });
 document.getElementById("gps").onclick = useGps;
 setupAutocomplete(place,document.getElementById("ac"));
+var fromInput=document.getElementById("from");
+var toInput=document.getElementById("to");
+setupAutocomplete(fromInput,document.getElementById("from-ac"));
+setupAutocomplete(toInput,document.getElementById("to-ac"));
+fromInput.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();toInput.focus();}});
+toInput.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();searchRoute();}});
 
 document.getElementById("route-toggle").onclick=function(){
   document.getElementById("route-box").classList.toggle("show");
@@ -450,7 +463,8 @@ function setupAutocomplete(input,box){
           el.onclick=function(){
             input.value=x.display_name.split(",").slice(0,3).join(",").trim();
             input.dataset.lat=x.lat; input.dataset.lng=x.lon;
-            box.classList.remove("show"); save();
+            box.classList.remove("show");
+            if(input===place)save();
           };
           box.appendChild(el);
         });
@@ -489,6 +503,7 @@ function searchPoint(){
 }
 
 function runPoint(lat,lng){
+  resultDistanceLabel="distanza";
   lastCenter={lat:lat,lng:lng};
   renderFavoriteStations();
   var list=[];
@@ -540,7 +555,7 @@ function showResults(list,label){
       '<div class="result-top"><div><div class="station-title-row"><button class="fav-star '+(isStationFavorite(s.id)?"active":"")+'" data-station-id="'+escapeHtml(String(s.id))+'" title="'+(isStationFavorite(s.id)?"Rimuovi dai preferiti":"Aggiungi ai preferiti")+'">'+(isStationFavorite(s.id)?"★":"☆")+'</button><div><div class="station">'+name+'</div><div class="addr">'+addr+'</div></div></div></div>'+
       '<div class="price">'+r.price.toFixed(3)+'<small>€/L</small></div></div>'+
       '<div class="result-bottom"><div class="metrics">'+
-      '<div class="metric"><b>'+r.distance.toFixed(1)+' km</b>distanza</div>'+
+      '<div class="metric"><b>'+r.distance.toFixed(1)+' km</b>'+resultDistanceLabel+'</div>'+
       '<div class="metric '+(i===0?"best-delta":"delta")+'"><b>'+(i===0?"Migliore":"+"+delta.toFixed(3)+" €/L")+'</b>differenza</div>'+
       '<div class="metric"><b>'+(i===0?"€0,00":formatEuro(extra50))+'</b>extra su 50 L</div>'+
       '</div><a class="maps" target="_blank" rel="noopener" href="'+maps+'">Indicazioni</a></div>'+
@@ -713,12 +728,23 @@ function formatShortDate(v){
   var s=String(v||"");return s.length>=10?s.slice(8,10)+"/"+s.slice(5,7):s;
 }
 
+function routePointPromise(input){
+  var lat=+input.dataset.lat,lng=+input.dataset.lng;
+  if(Number.isFinite(lat)&&Number.isFinite(lng))return Promise.resolve({lat:lat,lng:lng});
+  return geocodePromise(input.value.trim()).then(function(p){
+    if(p){input.dataset.lat=p.lat;input.dataset.lng=p.lng;}
+    return p;
+  });
+}
+
 function searchRoute(){
-  var from=document.getElementById("from").value.trim();
-  var to=document.getElementById("to").value.trim();
+  resultDistanceLabel="dalla rotta";
+  var from=fromInput.value.trim();
+  var to=toInput.value.trim();
   if(!from||!to){alert("Inserisci partenza e destinazione.");return;}
   setBusy(true,"Calcolo il percorso…");
-  Promise.all([geocodePromise(from),geocodePromise(to)]).then(function(points){
+  empty.classList.remove("show");
+  Promise.all([routePointPromise(fromInput),routePointPromise(toInput)]).then(function(points){
     if(!points[0]||!points[1])throw new Error("Non trovo uno degli indirizzi.");
     var a=points[0],b=points[1];
     return fetch("https://router.project-osrm.org/route/v1/driving/"+a.lng+","+a.lat+";"+b.lng+","+b.lat+"?overview=full&geometries=geojson")
@@ -735,13 +761,22 @@ function searchRoute(){
         lastCenter=null;
         renderFavoriteStations();
         lastResults=list;
-        showResults(list,fuel+" "+(mode==="self"?"Self":"Servito")+" lungo il percorso, max "+radius+" km di deviazione"+(brandFilter?" · "+brandFilter:""));
+        showResults(list,fuel+" "+(mode==="self"?"Self":"Servito")+" lungo il percorso, max "+radius+" km dalla rotta"+(brandFilter?" · "+brandFilter:""));
+        if(!list.length){
+          empty.textContent="Nessun distributore trovato lungo questo percorso. Prova ad aumentare il raggio o controlla partenza e destinazione.";
+          empty.classList.add("show");
+        }else{
+          empty.textContent="Nessun distributore trovato. Prova ad aumentare il raggio.";
+        }
         ensureMap(); routes.clearLayers();
         var ll=coords.map(function(c){return[c[1],c[0]];});
         routes.addLayer(L.polyline(ll,{color:"#4f8cff",weight:4,opacity:.75}));
         if(mapWrap.classList.contains("show")){drawMap(false);map.fitBounds(L.polyline(ll).getBounds().pad(.12));}
       });
-  }).catch(function(e){alert(e.message||"Errore nel calcolo del percorso.");}).finally(function(){setBusy(false);});
+  }).catch(function(e){
+    empty.classList.remove("show");
+    alert(e.message||"Errore nel calcolo del percorso.");
+  }).finally(function(){setBusy(false);});
 }
 
 function ensureMap(){
