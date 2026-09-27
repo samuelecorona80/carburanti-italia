@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build compact 30-day per-station price history with a 5 km local benchmark.
+"""Build compact 90-day per-station price history with a 5 km local benchmark.
 
 History is sharded so the browser only downloads the shard containing the
 selected station. Each point stores [date, price_milli, delta_vs_zone_milli,
@@ -22,7 +22,7 @@ SITE_DATA_DIR = BASE_DIR / "site" / "data"
 HISTORY_DIR = DATA_DIR / "station_history"
 SITE_HISTORY_DIR = SITE_DATA_DIR / "station_history"
 
-DAYS = 30
+DAYS = 90
 SHARDS = 64
 ZONE_KM = 5.0
 GRID_DEG = 0.05
@@ -118,30 +118,46 @@ def build_points(snapshot_date: str, stations: list[dict]) -> dict[int, dict[str
                 zone_avg = sum(vals) / len(vals)
                 delta_milli = int(round((price - zone_avg) * 1000))
                 neighbours = len(vals)
+                # Competition rank includes the selected station. Equal prices share
+                # the same best rank, which is more useful than arbitrary tie ordering.
+                rank = 1 + sum(1 for value in vals if value < price - 0.0005)
+                comparable_count = neighbours + 1
             else:
                 delta_milli = None
                 neighbours = 0
-            record[key] = [snapshot_date, int(round(price * 1000)), delta_milli, neighbours]
+                rank = 1
+                comparable_count = 1
+            record[key] = [
+                snapshot_date,
+                int(round(price * 1000)),
+                delta_milli,
+                neighbours,
+                rank,
+                comparable_count,
+            ]
 
         updates[station_shard(sid)][sid] = record
 
     return updates
 
 
-def load_shards() -> list[dict]:
+def load_shards() -> tuple[list[dict], bool]:
     shards = []
+    migration_needed = False
     for n in range(SHARDS):
         path = HISTORY_DIR / f"{n:02d}.json"
         if path.exists():
             try:
                 payload = load_json(path)
                 stations = payload.get("stations", {}) if isinstance(payload, dict) else {}
+                if (payload.get("meta") or {}).get("schema", 1) < 2:
+                    migration_needed = True
             except Exception:
                 stations = {}
         else:
             stations = {}
         shards.append(stations)
-    return shards
+    return shards, migration_needed
 
 
 def merge_updates(shards: list[dict], updates: dict[int, dict[str, dict[str, list]]]):
@@ -157,15 +173,50 @@ def merge_updates(shards: list[dict], updates: dict[int, dict[str, dict[str, lis
                 station_hist[key] = arr[-DAYS:]
 
 
+def history_summary(shards: list[dict]) -> dict:
+    """Compact metrics used to rank stations without loading history shards."""
+    out: dict[str, dict[str, list]] = {}
+    for shard in shards:
+        for sid, fuel_modes in shard.items():
+            station_summary: dict[str, list] = {}
+            for key, points in fuel_modes.items():
+                ranked = [p for p in points if len(p) >= 6 and p[4] and p[5]]
+                if not ranked:
+                    continue
+                deltas = [p[2] for p in ranked if p[2] is not None]
+                avg_rank = sum(p[4] for p in ranked) / len(ranked)
+                avg_total = sum(p[5] for p in ranked) / len(ranked)
+                top3_pct = round(100 * sum(1 for p in ranked if p[4] <= 3) / len(ranked))
+                best_pct = round(100 * sum(1 for p in ranked if p[4] == 1) / len(ranked))
+                avg_delta = round(sum(deltas) / len(deltas)) if deltas else None
+                # [days, avg_rank_x100, avg_total_x100, top3_pct, best_pct, avg_delta_milli]
+                station_summary[key] = [
+                    len(ranked),
+                    round(avg_rank * 100),
+                    round(avg_total * 100),
+                    top3_pct,
+                    best_pct,
+                    avg_delta,
+                ]
+            if station_summary:
+                out[sid] = station_summary
+    return out
+
+
 def save_shards(shards: list[dict]):
     HISTORY_DIR.mkdir(parents=True, exist_ok=True)
     SITE_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-    meta = {"days": DAYS, "zone_km": ZONE_KM, "schema": 1}
+    meta = {"days": DAYS, "zone_km": ZONE_KM, "schema": 2}
     for n, stations in enumerate(shards):
         payload = {"meta": meta, "stations": stations}
         text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         (HISTORY_DIR / f"{n:02d}.json").write_text(text, encoding="utf-8")
         (SITE_HISTORY_DIR / f"{n:02d}.json").write_text(text, encoding="utf-8")
+
+    summary = {"meta": meta, "stations": history_summary(shards)}
+    text = json.dumps(summary, ensure_ascii=False, separators=(",", ":"))
+    (DATA_DIR / "station_history_summary.json").write_text(text, encoding="utf-8")
+    (SITE_DATA_DIR / "station_history_summary.json").write_text(text, encoding="utf-8")
 
 
 def git_snapshots_before(current_date: str, limit: int) -> list[tuple[str, str]]:
@@ -224,12 +275,13 @@ def main():
         raise SystemExit("data/stations.json not found")
 
     current_date = current_snapshot_date()
-    shards = load_shards()
+    shards, migration_needed = load_shards()
     is_initial = not any((HISTORY_DIR / f"{n:02d}.json").exists() for n in range(SHARDS))
 
-    if is_initial:
+    if is_initial or migration_needed:
         previous = git_snapshots_before(current_date, DAYS - 1)
-        print(f"Initial history build: {len(previous)} previous snapshots + current")
+        reason = "Initial history build" if is_initial else "Schema migration/backfill"
+        print(f"{reason}: {len(previous)} previous snapshots + current")
         for snap_date, sha in previous:
             stations = load_git_snapshot(sha)
             if stations:
