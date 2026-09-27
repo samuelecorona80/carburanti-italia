@@ -10,6 +10,9 @@ on:
     paths:
       - 'etl/**'
       - 'requirements.txt'
+      - 'site/*.html'
+      - 'site/*.js'
+      - 'site/*.css'
       - '.github/workflows/daily_update.yml'
 
 permissions:
@@ -46,6 +49,9 @@ jobs:
 
       - name: Validate generated data
         run: python etl/validate_generated_data.py
+
+      - name: Smoke test site
+        run: python etl/smoke_test_site.py
 
       - name: Commit and push if changed
         run: |
