@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiche prezzi carburanti &#x2014; Prezzi Carburanti Italia</title>
+    <meta name="description" content="Statistiche e andamento dei prezzi carburanti in Italia. Medie nazionali, regionali e provinciali con dati MIMIT aggiornati quotidianamente.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-inner">
+            <div class="header-left">
+                <h1>&#x26FD; Prezzi Carburanti Italia</h1>
+                <p class="subtitle">Dati MIMIT &#x2022; Aggiornamento quotidiano</p>
+            </div>
+            <div class="header-right">
+                <span id="last-update" class="badge">&#x2014;</span>
+                <button id="theme-toggle" class="btn-icon" title="Cambia tema">&#x1F319;</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Loading -->
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Caricamento dati...</p>
+        </div>
+
+        <!-- Errore -->
+        <div id="error-banner" class="error-banner" style="display:none">
+            <p>&#x26A0;&#xFE0F; <span id="error-msg"></span></p>
+        </div>
+
+        <!-- Stats banner -->
+        <div id="stats-banner" class="stats-banner" style="display:none">
+            <span>&#x1F4CA; <strong id="stat-impianti">0</strong> distributori</span>
+            <span>&#x1F4B0; <strong id="stat-prezzi">0</strong> prezzi rilevati</span>
+        </div>
+
+        <!-- Link a Cerca Distributore -->
+        <a href="index.html" id="cerca-link" class="cerca-link" style="display:none">
+            &#x1F50D; Torna alla ricerca distributori &#x2192;
+        </a>
+
+        <!-- Card nazionali -->
+        <section id="national-cards" class="section">
+            <h2>&#x1F4CA; Panoramica Nazionale <small>(self-service)</small></h2>
+            <div class="cards-grid" id="cards-container"></div>
+        </section>
+
+        <!-- Grafico trend -->
+        <section class="section">
+            <div class="section-header">
+                <h2>&#x1F4C8; Trend Prezzi</h2>
+                <div class="btn-group" id="trend-period">
+                    <button class="btn-sm" data-days="30">30gg</button>
+                    <button class="btn-sm active" data-days="60">60gg</button>
+                    <button class="btn-sm" data-days="90">90gg</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="trend-chart"></canvas>
+            </div>
+            <div class="chart-legend" id="chart-legend"></div>
+        </section>
+
+        <!-- Tabella regionale -->
+        <section class="section">
+            <h2>&#x1F5FA;&#xFE0F; Prezzi per Regione</h2>
+            <p class="hint">Clicca su una regione per vedere le province</p>
+            <div class="table-responsive">
+                <table id="regional-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="name">Regione &#x25BF;</th>
+                            <th data-sort="benzina">Benzina &#x25BF;</th>
+                            <th data-sort="benzina_var">&#x394; gg</th>
+                            <th data-sort="gasolio">Gasolio &#x25BF;</th>
+                            <th data-sort="gasolio_var">&#x394; gg</th>
+                            <th data-sort="gpl">GPL &#x25BF;</th>
+                            <th data-sort="metano">Metano &#x25BF;</th>
+                        </tr>
+                    </thead>
+                    <tbody id="regional-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Drill-down provinciale -->
+        <section id="province-section" class="section" style="display:none">
+            <div class="section-header">
+                <h2 id="province-title">Province di &#x2014;</h2>
+                <button id="province-close" class="btn-sm">&#x2715; Chiudi</button>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Provincia</th>
+                            <th>Benzina</th>
+                            <th>Gasolio</th>
+                            <th>GPL</th>
+                            <th>Metano</th>
+                        </tr>
+                    </thead>
+                    <tbody id="province-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                Dati: <a href="https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti" target="_blank" rel="noopener">MIMIT Open Data</a>
+                &#x2014; Licenza IODL 2.0
+                &#x2014; <a href="index.html">Cerca Distributore</a>
+                &#x2014; <a href="https://samuelecorona.it" target="_blank" rel="noopener">samuelecorona.it</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
