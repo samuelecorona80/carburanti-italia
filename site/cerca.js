@@ -14,11 +14,11 @@ var circleLayer = null;
 var currentMode = "point";
 var currentResults = [];
 var currentSort = "price";
+var stationsPromise = null;
 
 // -- Init ---------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", function() {
     initMap();
-    loadStations();
     setupAutocomplete("pt-zona", "pt-zona-ac");
     setupAutocomplete("rt-from", "rt-from-ac");
     setupAutocomplete("rt-to", "rt-to-ac");
@@ -37,13 +37,26 @@ function initMap() {
 }
 
 function loadStations() {
-    fetch("data/stations.json")
-        .then(function(r) { return r.json(); })
+    if (STATIONS.length) return Promise.resolve(STATIONS);
+    if (stationsPromise) return stationsPromise;
+
+    stationsPromise = fetch("data/stations.json", { cache: "default" })
+        .then(function(r) {
+            if (!r.ok) throw new Error("stations.json non disponibile");
+            return r.json();
+        })
         .then(function(data) {
             STATIONS = data;
             console.log("Loaded " + STATIONS.length + " stations");
+            return STATIONS;
         })
-        .catch(function(e) { console.error("Failed to load stations", e); });
+        .catch(function(e) {
+            stationsPromise = null;
+            console.error("Failed to load stations", e);
+            throw e;
+        });
+
+    return stationsPromise;
 }
 
 // -- Mode toggle --------------------------------------------------------
@@ -158,6 +171,21 @@ function distToPolyline(lat, lng, coords) {
 
 // -- Search: Point mode -------------------------------------------------
 window.searchPoint = function() {
+    if (!STATIONS.length) {
+        var btn = document.getElementById("pt-search");
+        btn.disabled = true;
+        loadStations()
+            .then(function() {
+                btn.disabled = false;
+                window.searchPoint();
+            })
+            .catch(function() {
+                btn.disabled = false;
+                alert("Impossibile caricare i dati dei distributori");
+            });
+        return;
+    }
+
     var input = document.getElementById("pt-zona");
     var lat = parseFloat(input.dataset.lat);
     var lng = parseFloat(input.dataset.lng);
@@ -225,6 +253,21 @@ function doPointSearch(lat, lng) {
 
 // -- Search: Route mode -------------------------------------------------
 window.searchRoute = function() {
+    if (!STATIONS.length) {
+        var loadBtn = document.getElementById("rt-search");
+        loadBtn.disabled = true;
+        loadStations()
+            .then(function() {
+                loadBtn.disabled = false;
+                window.searchRoute();
+            })
+            .catch(function() {
+                loadBtn.disabled = false;
+                alert("Impossibile caricare i dati dei distributori");
+            });
+        return;
+    }
+
     var fromInput = document.getElementById("rt-from");
     var toInput = document.getElementById("rt-to");
     var fromLat = parseFloat(fromInput.dataset.lat);
