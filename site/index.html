@@ -1,132 +1,363 @@
 <!DOCTYPE html>
-<html lang="it" data-theme="light">
+<html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prezzi Carburanti Italia &#x2014; Dashboard</title>
-    <meta name="description" content="Dashboard interattiva prezzi carburanti in Italia. Medie nazionali, regionali, provinciali. Dati MIMIT aggiornati quotidianamente.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f18">
+<title>Trova carburante vicino a te</title>
+<meta name="description" content="Trova i distributori più economici vicino a un punto, scegli il raggio e confronta prezzo, distanza e differenza sul pieno. Dati MIMIT aggiornati quotidianamente.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{color-scheme:dark;--bg:#0a0f18;--panel:#111925;--panel2:#151f2d;--line:#253247;--text:#f5f7fa;--muted:#8fa0b5;--blue:#4f8cff;--green:#52d681;--red:#ef6464;--amber:#f1b84b}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#142139 0,#0a0f18 38%);color:var(--text);min-height:100vh}
+button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;padding:18px 16px 44px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 18px}.brand{font-size:18px;font-weight:800;letter-spacing:-.35px}.brand span{color:var(--green)}.top a{color:var(--muted);font-size:13px;text-decoration:none}.hero{margin:10px 0 18px}.hero h1{font-size:clamp(30px,8vw,46px);line-height:1.03;letter-spacing:-1.6px;margin:0 0 10px;max-width:650px}.hero p{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:600px}.search-card{background:rgba(17,25,37,.95);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 18px 55px rgba(0,0,0,.22)}
+.location-row{display:grid;grid-template-columns:46px 1fr;gap:8px}.icon-btn,.primary,.secondary,.chip,.map-toggle,.route-toggle{border:0;cursor:pointer}.icon-btn{height:50px;border-radius:14px;background:#1b2940;color:#81aaff;font-size:19px}.field-wrap{position:relative}.field{width:100%;height:50px;border:1px solid #2b3a50;background:#0d141f;color:var(--text);border-radius:14px;padding:0 14px;font-size:16px;outline:none}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}.ac{position:absolute;top:54px;left:0;right:0;background:#101925;border:1px solid #2b3a50;border-radius:14px;overflow:hidden;z-index:40;display:none;box-shadow:0 18px 50px rgba(0,0,0,.4)}.ac.show{display:block}.ac-item{padding:11px 13px;color:#dce5f1;font-size:13px;line-height:1.35;border-bottom:1px solid #1c293b;cursor:pointer}.ac-item:last-child{border-bottom:0}
+.label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;color:#6f829a;margin:18px 0 8px}.fuel-row,.radius-row,.mode-row{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid #29384d;background:#0d141f;color:#aebdd0;border-radius:999px;padding:9px 13px;font-size:13px;font-weight:700}.chip.active{background:#173764;border-color:#376ebf;color:#fff}.radius-row .chip.active{background:#173b29;border-color:#2c7449;color:#dff9e8}.mode-row .chip.active{background:#30261b;border-color:#73542d;color:#ffe4b2}.primary{width:100%;height:52px;border-radius:14px;margin-top:18px;background:linear-gradient(135deg,#3478f6,#5a91ff);color:white;font-weight:800;font-size:15px;box-shadow:0 10px 28px rgba(52,120,246,.22)}.primary:disabled{opacity:.55;cursor:wait}.sub-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}.route-toggle,.map-toggle{background:transparent;color:#7fa9ee;font-size:12px;padding:6px 0}.data-note{font-size:11px;color:#65758a;text-align:right}
+.route-box{display:none;border-top:1px solid #233149;margin-top:12px;padding-top:12px}.route-box.show{display:block}.route-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.route-grid .field{height:46px;font-size:14px}.secondary{width:100%;height:44px;margin-top:9px;background:#1c2a3e;color:#dce8fb;border-radius:12px;font-weight:700}
+#loading{display:none;color:var(--muted);font-size:13px;padding:18px 4px}.summary{display:none;margin:18px 0 10px;padding:14px 15px;background:linear-gradient(135deg,rgba(82,214,129,.11),rgba(79,140,255,.08));border:1px solid rgba(82,214,129,.25);border-radius:16px}.summary.show{display:block}.summary-title{font-size:13px;color:#dbe7f4}.summary-title strong{font-size:20px;color:var(--green);display:block;margin-top:3px}.summary-meta{margin-top:7px;font-size:12px;color:var(--muted);line-height:1.5}
+.results-head{display:none;align-items:end;justify-content:space-between;gap:12px;margin:22px 1px 9px}.results-head.show{display:flex}.results-head h2{font-size:17px;margin:0}.results-head span{font-size:11px;color:var(--muted);text-align:right}.results{display:grid;gap:9px}.result{background:rgba(17,25,37,.92);border:1px solid #202e42;border-radius:17px;padding:13px}.result.best{border-color:rgba(82,214,129,.46);box-shadow:inset 3px 0 0 var(--green)}.result-top{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}.station{font-weight:750;font-size:15px;line-height:1.25}.addr{font-size:11px;color:var(--muted);line-height:1.45;margin-top:4px}.price{text-align:right;font-size:22px;font-weight:800;letter-spacing:-.6px}.price small{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0;margin-top:1px}.result-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid #1d2a3c}.metrics{display:flex;gap:12px;flex-wrap:wrap}.metric{font-size:11px;color:#8799ae}.metric b{display:block;font-size:12px;color:#dce5f1;margin-bottom:2px}.metric.delta b{color:#ffc76e}.metric.best-delta b{color:var(--green)}.maps{display:inline-flex;align-items:center;text-decoration:none;background:#18263a;color:#9fc0f8;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.map-wrap{display:none;margin-top:12px;border:1px solid #24334a;border-radius:18px;overflow:hidden}.map-wrap.show{display:block}#map{height:300px;width:100%}.empty{display:none;text-align:center;color:var(--muted);padding:36px 16px;font-size:14px}.empty.show{display:block}.footer{margin-top:34px;text-align:center;font-size:11px;color:#5e7086;line-height:1.6}.footer a{color:#748ca9;text-decoration:none}
+@media(max-width:520px){.shell{padding:13px 11px 38px}.hero{margin-top:2px}.hero h1{font-size:34px}.search-card{border-radius:19px;padding:12px}.result{padding:12px}.price{font-size:20px}.result-bottom{align-items:flex-end}.metrics{gap:9px}.route-grid{grid-template-columns:1fr}.data-note{display:none}}
+</style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container header-inner">
-            <div class="header-left">
-                <h1>&#x26FD; Prezzi Carburanti Italia</h1>
-                <p class="subtitle">Dati MIMIT &#x2022; Aggiornamento quotidiano</p>
-            </div>
-            <div class="header-right">
-                <span id="last-update" class="badge">&#x2014;</span>
-                <button id="theme-toggle" class="btn-icon" title="Cambia tema">&#x1F319;</button>
-            </div>
-        </div>
-    </header>
+<div class="shell">
+<header class="top">
+  <div class="brand">⛽ Carburanti <span>Italia</span></div>
+  <a href="statistiche.html">Statistiche</a>
+</header>
 
-    <main class="container">
-        <!-- Loading -->
-        <div id="loading" class="loading-overlay">
-            <div class="spinner"></div>
-            <p>Caricamento dati...</p>
-        </div>
+<section class="hero">
+  <h1>Trova il pieno più conveniente vicino a te.</h1>
+  <p>Scegli un punto e un raggio. Ti mostro i distributori ordinati per prezzo, quanto distano e quanto spenderesti in più rispetto al migliore.</p>
+</section>
 
-        <!-- Errore -->
-        <div id="error-banner" class="error-banner" style="display:none">
-            <p>&#x26A0;&#xFE0F; <span id="error-msg"></span></p>
-        </div>
+<section class="search-card">
+  <div class="location-row">
+    <button class="icon-btn" id="gps" aria-label="Usa la mia posizione" title="Usa la mia posizione">⌖</button>
+    <div class="field-wrap">
+      <input class="field" id="place" placeholder="Inserisci città, via o indirizzo" autocomplete="off">
+      <div class="ac" id="ac"></div>
+    </div>
+  </div>
 
-        <!-- Stats banner -->
-        <div id="stats-banner" class="stats-banner" style="display:none">
-            <span>&#x1F4CA; <strong id="stat-impianti">0</strong> distributori</span>
-            <span>&#x1F4B0; <strong id="stat-prezzi">0</strong> prezzi rilevati</span>
-        </div>
+  <span class="label">Carburante</span>
+  <div class="fuel-row" id="fuel-row">
+    <button class="chip active" data-fuel="Gasolio">Gasolio</button>
+    <button class="chip" data-fuel="Benzina">Benzina</button>
+    <button class="chip" data-fuel="GPL">GPL</button>
+    <button class="chip" data-fuel="Metano">Metano</button>
+  </div>
 
-        <!-- Link a Cerca Distributore -->
-        <a href="cerca.html" id="cerca-link" class="cerca-link" style="display:none">
-            &#x1F50D; Cerca il distributore piu economico vicino a te &#x2192;
-        </a>
+  <span class="label">Raggio</span>
+  <div class="radius-row" id="radius-row">
+    <button class="chip" data-radius="2">2 km</button>
+    <button class="chip active" data-radius="5">5 km</button>
+    <button class="chip" data-radius="10">10 km</button>
+    <button class="chip" data-radius="20">20 km</button>
+  </div>
 
-        <!-- Card nazionali -->
-        <section id="national-cards" class="section">
-            <h2>&#x1F4CA; Panoramica Nazionale <small>(self-service)</small></h2>
-            <div class="cards-grid" id="cards-container"></div>
-        </section>
+  <span class="label">Modalità</span>
+  <div class="mode-row" id="mode-row">
+    <button class="chip active" data-mode="self">Self</button>
+    <button class="chip" data-mode="servito">Servito</button>
+  </div>
 
-        <!-- Grafico trend -->
-        <section class="section">
-            <div class="section-header">
-                <h2>&#x1F4C8; Trend Prezzi</h2>
-                <div class="btn-group" id="trend-period">
-                    <button class="btn-sm" data-days="30">30gg</button>
-                    <button class="btn-sm active" data-days="60">60gg</button>
-                    <button class="btn-sm" data-days="90">90gg</button>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="trend-chart"></canvas>
-            </div>
-            <div class="chart-legend" id="chart-legend"></div>
-        </section>
+  <button class="primary" id="search">Trova i distributori più economici</button>
 
-        <!-- Tabella regionale -->
-        <section class="section">
-            <h2>&#x1F5FA;&#xFE0F; Prezzi per Regione</h2>
-            <p class="hint">Clicca su una regione per vedere le province</p>
-            <div class="table-responsive">
-                <table id="regional-table" class="data-table">
-                    <thead>
-                        <tr>
-                            <th data-sort="name">Regione &#x25BF;</th>
-                            <th data-sort="benzina">Benzina &#x25BF;</th>
-                            <th data-sort="benzina_var">&#x394; gg</th>
-                            <th data-sort="gasolio">Gasolio &#x25BF;</th>
-                            <th data-sort="gasolio_var">&#x394; gg</th>
-                            <th data-sort="gpl">GPL &#x25BF;</th>
-                            <th data-sort="metano">Metano &#x25BF;</th>
-                        </tr>
-                    </thead>
-                    <tbody id="regional-body"></tbody>
-                </table>
-            </div>
-        </section>
+  <div class="sub-actions">
+    <button class="route-toggle" id="route-toggle">Cerchi lungo un viaggio? A → B</button>
+    <span class="data-note">Dati MIMIT, aggiornamento quotidiano</span>
+  </div>
 
-        <!-- Drill-down provinciale -->
-        <section id="province-section" class="section" style="display:none">
-            <div class="section-header">
-                <h2 id="province-title">Province di &#x2014;</h2>
-                <button id="province-close" class="btn-sm">&#x2715; Chiudi</button>
-            </div>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Provincia</th>
-                            <th>Benzina</th>
-                            <th>Gasolio</th>
-                            <th>GPL</th>
-                            <th>Metano</th>
-                        </tr>
-                    </thead>
-                    <tbody id="province-body"></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+  <div class="route-box" id="route-box">
+    <div class="route-grid">
+      <input class="field" id="from" placeholder="Partenza">
+      <input class="field" id="to" placeholder="Destinazione">
+    </div>
+    <button class="secondary" id="route-search">Cerca distributori lungo il percorso</button>
+  </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>
-                Dati: <a href="https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti" target="_blank" rel="noopener">MIMIT Open Data</a>
-                &#x2014; Licenza IODL 2.0
-                &#x2014; <a href="cerca.html">Cerca Distributore</a>
-                &#x2014; <a href="https://samuelecorona.it" target="_blank" rel="noopener">samuelecorona.it</a>
-            </p>
-        </div>
-    </footer>
+<div id="loading">Sto cercando i distributori e confrontando i prezzi…</div>
+<div class="summary" id="summary"></div>
 
-    <script src="app.js"></script>
+<div class="results-head" id="results-head">
+  <h2>Più convenienti</h2>
+  <span id="results-count"></span>
+</div>
+<div class="results" id="results"></div>
+<div class="empty" id="empty">Nessun distributore trovato. Prova ad aumentare il raggio.</div>
+
+<button class="map-toggle" id="map-toggle" style="display:none">Mostra sulla mappa</button>
+<div class="map-wrap" id="map-wrap"><div id="map"></div></div>
+
+<footer class="footer">
+  Prezzi da Open Data MIMIT. Verifica sempre il prezzo esposto alla pompa.<br>
+  <a href="statistiche.html">Andamento e statistiche</a> · <a href="https://samuelecorona.it">samuelecorona.it</a>
+</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+"use strict";
+
+var stations = [];
+var fuel = "Gasolio";
+var radius = 5;
+var mode = "self";
+var lastResults = [];
+var lastCenter = null;
+var map = null;
+var markers = null;
+var circles = null;
+var routes = null;
+
+var place = document.getElementById("place");
+var searchBtn = document.getElementById("search");
+var loading = document.getElementById("loading");
+var summary = document.getElementById("summary");
+var resultsEl = document.getElementById("results");
+var head = document.getElementById("results-head");
+var count = document.getElementById("results-count");
+var empty = document.getElementById("empty");
+var mapToggle = document.getElementById("map-toggle");
+var mapWrap = document.getElementById("map-wrap");
+
+fetch("data/stations.json")
+  .then(function(r){ if(!r.ok) throw new Error("Dati non disponibili"); return r.json(); })
+  .then(function(d){ stations = d; restore(); })
+  .catch(function(){ empty.textContent = "Impossibile caricare i dati dei distributori."; empty.classList.add("show"); });
+
+bindChips("fuel-row","fuel",function(v){ fuel=v; });
+bindChips("radius-row","radius",function(v){ radius=+v; });
+bindChips("mode-row","mode",function(v){ mode=v; });
+
+searchBtn.onclick = searchPoint;
+place.addEventListener("keydown",function(e){ if(e.key==="Enter") searchPoint(); });
+document.getElementById("gps").onclick = useGps;
+setupAutocomplete(place,document.getElementById("ac"));
+
+document.getElementById("route-toggle").onclick=function(){
+  document.getElementById("route-box").classList.toggle("show");
+};
+document.getElementById("route-search").onclick=searchRoute;
+
+mapToggle.onclick=function(){
+  var open=!mapWrap.classList.contains("show");
+  mapWrap.classList.toggle("show",open);
+  mapToggle.textContent=open?"Nascondi mappa":"Mostra sulla mappa";
+  if(open){ ensureMap(); drawMap(); setTimeout(function(){map.invalidateSize();},50); }
+};
+
+function bindChips(id,key,setter){
+  document.getElementById(id).addEventListener("click",function(e){
+    var btn=e.target.closest("[data-"+key+"]"); if(!btn)return;
+    this.querySelectorAll(".chip").forEach(function(x){x.classList.remove("active");});
+    btn.classList.add("active"); setter(btn.dataset[key]); save();
+  });
+}
+
+function setupAutocomplete(input,box){
+  var timer;
+  input.addEventListener("input",function(){
+    delete input.dataset.lat; delete input.dataset.lng;
+    clearTimeout(timer); var q=input.value.trim();
+    if(q.length<3){box.classList.remove("show");return;}
+    timer=setTimeout(function(){
+      fetch("https://nominatim.openstreetmap.org/search?format=json&countrycodes=it&limit=5&addressdetails=1&q="+encodeURIComponent(q),{headers:{"Accept-Language":"it"}})
+      .then(function(r){return r.json();})
+      .then(function(items){
+        box.innerHTML="";
+        items.forEach(function(x){
+          var el=document.createElement("div"); el.className="ac-item";
+          el.textContent=x.display_name;
+          el.onclick=function(){
+            input.value=x.display_name.split(",").slice(0,3).join(",").trim();
+            input.dataset.lat=x.lat; input.dataset.lng=x.lon;
+            box.classList.remove("show"); save();
+          };
+          box.appendChild(el);
+        });
+        box.classList.toggle("show",items.length>0);
+      });
+    },350);
+  });
+  document.addEventListener("click",function(e){if(e.target!==input&&!box.contains(e.target))box.classList.remove("show");});
+}
+
+function useGps(){
+  if(!navigator.geolocation){alert("Geolocalizzazione non disponibile");return;}
+  setBusy(true,"Cerco la tua posizione…");
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=pos.coords.latitude,lng=pos.coords.longitude;
+    place.dataset.lat=lat; place.dataset.lng=lng;
+    fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lng+"&zoom=16",{headers:{"Accept-Language":"it"}})
+      .then(function(r){return r.json();})
+      .then(function(x){place.value=(x.display_name||"Posizione attuale").split(",").slice(0,3).join(",").trim();})
+      .catch(function(){place.value="Posizione attuale";})
+      .finally(function(){setBusy(false);runPoint(lat,lng);});
+  },function(){setBusy(false);alert("Non riesco a ottenere la posizione.");},{enableHighAccuracy:true,timeout:10000});
+}
+
+function searchPoint(){
+  if(!stations.length){alert("I dati stanno ancora caricando.");return;}
+  var lat=+place.dataset.lat,lng=+place.dataset.lng;
+  if(Number.isFinite(lat)&&Number.isFinite(lng)){runPoint(lat,lng);return;}
+  var q=place.value.trim(); if(q.length<2){place.focus();return;}
+  setBusy(true,"Cerco il punto…");
+  geocode(q,function(a,b){
+    setBusy(false);
+    if(a===null){alert("Località non trovata.");return;}
+    place.dataset.lat=a;place.dataset.lng=b;runPoint(a,b);
+  });
+}
+
+function runPoint(lat,lng){
+  lastCenter={lat:lat,lng:lng};
+  var list=[];
+  for(var i=0;i<stations.length;i++){
+    var s=stations[i],p=getPrice(s); if(!p||!s.lat||!s.lng)continue;
+    var d=haversine(lat,lng,s.lat,s.lng);
+    if(d<=radius)list.push({station:s,price:p,distance:d});
+  }
+  list.sort(function(a,b){return a.price-b.price||a.distance-b.distance;});
+  showResults(list,fuel+" "+(mode==="self"?"Self":"Servito")+" entro "+radius+" km");
+  save();
+}
+
+function getPrice(s){
+  if(!s.prezzi||!s.prezzi[fuel])return null;
+  var p=mode==="self"?s.prezzi[fuel].self:s.prezzi[fuel].servito;
+  return p&&p>0?p:null;
+}
+
+function showResults(list,label){
+  lastResults=list;
+  resultsEl.innerHTML="";
+  empty.classList.remove("show");
+  summary.classList.remove("show");
+  head.classList.remove("show");
+  mapToggle.style.display="none";
+  if(mapWrap.classList.contains("show"))drawMap();
+
+  if(!list.length){empty.classList.add("show");return;}
+
+  var best=list[0].price;
+  var worst=list[list.length-1].price;
+  var saving50=(worst-best)*50;
+  summary.innerHTML='<div class="summary-title">Prezzo migliore<strong>'+best.toFixed(3)+' €/L</strong></div>'+
+    '<div class="summary-meta">Tra il più economico e il più caro ci sono <b>'+formatMoney(worst-best)+'/L</b>, cioè <b>'+formatEuro(saving50)+'</b> su un pieno da 50 L.</div>';
+  summary.classList.add("show");
+  head.classList.add("show");
+  count.textContent=list.length+" risultati · "+label;
+
+  list.forEach(function(r,i){
+    var s=r.station,delta=r.price-best,extra50=delta*50;
+    var name=escapeHtml(s.bandiera||s.gestore||s.nome||"Distributore");
+    var addr=escapeHtml([s.indirizzo,s.comune].filter(Boolean).join(", "));
+    var maps="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(s.lat+","+s.lng);
+    var card=document.createElement("article");
+    card.className="result"+(i===0?" best":"");
+    card.innerHTML=
+      '<div class="result-top"><div><div class="station">'+name+'</div><div class="addr">'+addr+'</div></div>'+
+      '<div class="price">'+r.price.toFixed(3)+'<small>€/L</small></div></div>'+
+      '<div class="result-bottom"><div class="metrics">'+
+      '<div class="metric"><b>'+r.distance.toFixed(1)+' km</b>distanza</div>'+
+      '<div class="metric '+(i===0?"best-delta":"delta")+'"><b>'+(i===0?"Migliore":"+"+delta.toFixed(3)+" €/L")+'</b>differenza</div>'+
+      '<div class="metric"><b>'+(i===0?"€0,00":formatEuro(extra50))+'</b>extra su 50 L</div>'+
+      '</div><a class="maps" target="_blank" rel="noopener" href="'+maps+'">Indicazioni</a></div>';
+    resultsEl.appendChild(card);
+  });
+  mapToggle.style.display="inline-block";
+  if(mapWrap.classList.contains("show"))drawMap();
+  if(summary.getBoundingClientRect().top>window.innerHeight*.75)summary.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function searchRoute(){
+  var from=document.getElementById("from").value.trim();
+  var to=document.getElementById("to").value.trim();
+  if(!from||!to){alert("Inserisci partenza e destinazione.");return;}
+  setBusy(true,"Calcolo il percorso…");
+  Promise.all([geocodePromise(from),geocodePromise(to)]).then(function(points){
+    if(!points[0]||!points[1])throw new Error("Non trovo uno degli indirizzi.");
+    var a=points[0],b=points[1];
+    return fetch("https://router.project-osrm.org/route/v1/driving/"+a.lng+","+a.lat+";"+b.lng+","+b.lat+"?overview=full&geometries=geojson")
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(!data.routes||!data.routes.length)throw new Error("Percorso non trovato.");
+        var route=data.routes[0],coords=route.geometry.coordinates,list=[];
+        for(var i=0;i<stations.length;i++){
+          var s=stations[i],p=getPrice(s);if(!p||!s.lat||!s.lng)continue;
+          var d=distToPolyline(s.lat,s.lng,coords);
+          if(d<=radius)list.push({station:s,price:p,distance:d});
+        }
+        list.sort(function(x,y){return x.price-y.price||x.distance-y.distance;});
+        lastCenter=null;
+        lastResults=list;
+        showResults(list,fuel+" "+(mode==="self"?"Self":"Servito")+" lungo il percorso, max "+radius+" km di deviazione");
+        ensureMap(); routes.clearLayers();
+        var ll=coords.map(function(c){return[c[1],c[0]];});
+        routes.addLayer(L.polyline(ll,{color:"#4f8cff",weight:4,opacity:.75}));
+        if(mapWrap.classList.contains("show")){drawMap(false);map.fitBounds(L.polyline(ll).getBounds().pad(.12));}
+      });
+  }).catch(function(e){alert(e.message||"Errore nel calcolo del percorso.");}).finally(function(){setBusy(false);});
+}
+
+function ensureMap(){
+  if(map)return;
+  map=L.map("map",{zoomControl:true}).setView([41.9,12.5],6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap",maxZoom:18}).addTo(map);
+  markers=L.layerGroup().addTo(map);circles=L.layerGroup().addTo(map);routes=L.layerGroup().addTo(map);
+}
+
+function drawMap(fit){
+  ensureMap();markers.clearLayers();circles.clearLayers();
+  if(lastCenter){
+    circles.addLayer(L.circle([lastCenter.lat,lastCenter.lng],{radius:radius*1000,color:"#4f8cff",fillColor:"#4f8cff",fillOpacity:.05,weight:1}));
+  }
+  lastResults.slice(0,50).forEach(function(r,i){
+    var col=i===0?"#52d681":"#4f8cff";
+    var m=L.circleMarker([r.station.lat,r.station.lng],{radius:i===0?9:6,color:col,fillColor:col,fillOpacity:.9,weight:2});
+    m.bindPopup("<b>"+escapeHtml(r.station.bandiera||r.station.gestore||"Distributore")+"</b><br>"+r.price.toFixed(3)+" €/L<br>"+r.distance.toFixed(1)+" km");
+    markers.addLayer(m);
+  });
+  if(fit!==false){
+    if(lastCenter)map.setView([lastCenter.lat,lastCenter.lng],radius<=5?13:radius<=10?12:10);
+    else if(lastResults.length){var g=L.featureGroup(lastResults.slice(0,30).map(function(r){return L.marker([r.station.lat,r.station.lng]);}));map.fitBounds(g.getBounds().pad(.15));}
+  }
+}
+
+function geocode(q,cb){
+  fetch("https://nominatim.openstreetmap.org/search?format=json&countrycodes=it&limit=1&q="+encodeURIComponent(q),{headers:{"Accept-Language":"it"}})
+  .then(function(r){return r.json();}).then(function(x){cb(x.length?+x[0].lat:null,x.length?+x[0].lon:null);}).catch(function(){cb(null,null);});
+}
+function geocodePromise(q){return new Promise(function(resolve){geocode(q,function(a,b){resolve(a===null?null:{lat:a,lng:b});});});}
+function haversine(a,b,c,d){var R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180,z=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
+function pointSeg(px,py,ax,ay,bx,by){var dx=bx-ax,dy=by-ay;if(!dx&&!dy)return haversine(px,py,ax,ay);var t=((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy);t=Math.max(0,Math.min(1,t));return haversine(px,py,ax+t*dx,ay+t*dy);}
+function distToPolyline(lat,lng,c){var m=Infinity,step=Math.max(1,Math.floor(c.length/450));for(var i=0;i<c.length-1;i+=step){var j=Math.min(i+step,c.length-1),d=pointSeg(lat,lng,c[i][1],c[i][0],c[j][1],c[j][0]);if(d<m)m=d;}return m;}
+function setBusy(on,text){loading.style.display=on?"block":"none";if(text)loading.textContent=text;searchBtn.disabled=on;}
+function formatEuro(v){return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"}).format(v);}
+function formatMoney(v){return v.toFixed(3).replace(".",",")+" €";}
+function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+function save(){
+  try{localStorage.setItem("fuel-simple-v1",JSON.stringify({place:place.value,lat:place.dataset.lat,lng:place.dataset.lng,fuel:fuel,radius:radius,mode:mode}));}catch(e){}
+}
+function restore(){
+  try{
+    var s=JSON.parse(localStorage.getItem("fuel-simple-v1")||"null");if(!s)return;
+    if(s.place)place.value=s.place;if(s.lat)place.dataset.lat=s.lat;if(s.lng)place.dataset.lng=s.lng;
+    if(s.fuel){fuel=s.fuel;activate("fuel-row","fuel",fuel);}
+    if(s.radius){radius=+s.radius;activate("radius-row","radius",String(radius));}
+    if(s.mode){mode=s.mode;activate("mode-row","mode",mode);}
+  }catch(e){}
+}
+function activate(id,key,val){document.getElementById(id).querySelectorAll(".chip").forEach(function(b){b.classList.toggle("active",b.dataset[key]===val);});}
+})();
+</script>
 </body>
 </html>
