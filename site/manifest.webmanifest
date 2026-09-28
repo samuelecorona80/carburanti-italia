@@ -1,0 +1,19 @@
+{
+  "name": "Carburanti Italia",
+  "short_name": "Carburanti",
+  "description": "Trova i distributori più convenienti con dati MIMIT aggiornati quotidianamente.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0f18",
+  "theme_color": "#0a0f18",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
