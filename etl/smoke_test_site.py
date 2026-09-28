@@ -30,6 +30,7 @@ def main() -> None:
         SITE / "index.html",
         SITE / "cerca.html",
         SITE / "statistiche.html",
+        SITE / "dati-utili.html",
         SITE / "app.js",
         SITE / "cerca.js",
         SITE / "style.css",
@@ -64,6 +65,17 @@ def main() -> None:
     ):
         if token not in cerca:
             fail(f"cerca.html missing expected behavior token: {token}")
+
+    insights = (SITE / "dati-utili.html").read_text(encoding="utf-8")
+    for token in (
+        "Giorno storicamente più basso",
+        "Orario migliore?",
+        "data/latest.json",
+        "data/history.json",
+        "data/stations.json",
+    ):
+        if token not in insights:
+            fail(f"dati-utili.html missing expected token: {token}")
 
     latest = load_json(DATA / "latest.json")
     last_update = load_json(DATA / "last_update.json")
