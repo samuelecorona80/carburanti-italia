@@ -55,8 +55,15 @@ def main() -> None:
             fail(f"index.html missing expected token: {token}")
 
     cerca = (SITE / "cerca.html").read_text(encoding="utf-8")
-    if "cerca.js" not in cerca:
-        fail("cerca.html does not reference cerca.js")
+    for token in (
+        'data/stations.json',
+        'router.project-osrm.org',
+        'nominatim.openstreetmap.org',
+        'function doPoint',
+        'function fetchRoute',
+    ):
+        if token not in cerca:
+            fail(f"cerca.html missing expected behavior token: {token}")
 
     latest = load_json(DATA / "latest.json")
     last_update = load_json(DATA / "last_update.json")
