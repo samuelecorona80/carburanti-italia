@@ -106,10 +106,12 @@ button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;paddin
       <div class="field-wrap">
         <input class="field" id="from" placeholder="Partenza" autocomplete="off">
         <div class="ac" id="from-ac"></div>
+        <div class="route-favorites" id="from-favorites"></div>
       </div>
       <div class="field-wrap">
         <input class="field" id="to" placeholder="Destinazione" autocomplete="off">
         <div class="ac" id="to-ac"></div>
+        <div class="route-favorites" id="to-favorites"></div>
       </div>
     </div>
     <div class="route-options">
@@ -281,6 +283,8 @@ var fromInput=document.getElementById("from");
 var toInput=document.getElementById("to");
 setupAutocomplete(fromInput,document.getElementById("from-ac"));
 setupAutocomplete(toInput,document.getElementById("to-ac"));
+renderRouteFavorites("from");
+renderRouteFavorites("to");
 fromInput.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();toInput.focus();}});
 toInput.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();searchRoute();}});
 
@@ -399,6 +403,8 @@ function saveFavoriteLocation(slot){
     favoriteLocations[slot]={label:label.slice(0,24),address:q||label,lat:+a,lng:+b};
     persistFavorites();
     renderFavoriteLocations();
+    renderRouteFavorites("from");
+    renderRouteFavorites("to");
     updateSaveLocationButton();
   }
   if(Number.isFinite(lat)&&Number.isFinite(lng)){finish(lat,lng);return;}
@@ -903,6 +909,41 @@ function routePointPromise(input){
     if(p){input.dataset.lat=p.lat;input.dataset.lng=p.lng;}
     return p;
   });
+}
+
+function renderRouteFavorites(target){
+  var wrap=document.getElementById(target+"-favorites");
+  var input=target==="from"?fromInput:toInput;
+  if(!wrap||!input)return;
+  wrap.innerHTML="";
+  favoriteLocations.forEach(function(fav){
+    if(!fav)return;
+    var btn=document.createElement("button");
+    btn.type="button";
+    btn.className="route-fav-btn";
+    btn.textContent="★ "+fav.label;
+    btn.onclick=function(){
+      input.value=fav.address||fav.label;
+      input.dataset.lat=fav.lat;
+      input.dataset.lng=fav.lng;
+    };
+    wrap.appendChild(btn);
+  });
+  if(target==="from"){
+    var gps=document.createElement("button");
+    gps.type="button";
+    gps.className="route-fav-btn gps";
+    gps.textContent="⌖ Posizione attuale";
+    gps.onclick=function(){
+      if(!navigator.geolocation){alert("Geolocalizzazione non supportata");return;}
+      navigator.geolocation.getCurrentPosition(function(pos){
+        input.value="Posizione attuale";
+        input.dataset.lat=pos.coords.latitude;
+        input.dataset.lng=pos.coords.longitude;
+      },function(){alert("Impossibile ottenere la posizione");});
+    };
+    wrap.appendChild(gps);
+  }
 }
 
 function searchRoute(){
