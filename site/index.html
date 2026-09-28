@@ -13,7 +13,7 @@
 :root{color-scheme:dark;--bg:#0a0f18;--panel:#111925;--panel2:#151f2d;--line:#253247;--text:#f5f7fa;--muted:#8fa0b5;--blue:#4f8cff;--green:#52d681;--red:#ef6464;--amber:#f1b84b}
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#142139 0,#0a0f18 38%);color:var(--text);min-height:100vh}
 button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;padding:18px 16px 44px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 18px}.brand{font-size:18px;font-weight:800;letter-spacing:-.35px}.brand span{color:var(--green)}.top-actions{display:flex;align-items:center;gap:10px}.top a{color:var(--muted);font-size:13px;text-decoration:none}.refresh-btn{width:34px;height:34px;border:1px solid #29384d;background:#0d141f;color:#9db7d7;border-radius:11px;cursor:pointer;font-size:17px;display:inline-flex;align-items:center;justify-content:center}.refresh-btn:active{transform:scale(.96)}.refresh-btn.spinning{animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.hero{margin:10px 0 18px}.hero h1{font-size:clamp(30px,8vw,46px);line-height:1.03;letter-spacing:-1.6px;margin:0 0 10px;max-width:650px}.hero p{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:600px}.search-card{background:rgba(17,25,37,.95);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 18px 55px rgba(0,0,0,.22)}
-.location-row{display:grid;grid-template-columns:46px 1fr;gap:8px}.favorite-locations-wrap{margin-top:10px}.favorite-locations-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#65758a;font-weight:800;margin:0 0 6px 2px}.favorite-locations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.favorite-location{position:relative;min-width:0}.fav-location-btn{width:100%;height:38px;border:1px solid #29384d;background:#0d141f;color:#aebdd0;border-radius:11px;padding:0 23px 0 9px;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.fav-location-btn.saved{color:#dce9fb;border-color:#365070;background:#132033}.fav-location-btn.empty{color:#71849c;border-style:dashed}.fav-location-remove{position:absolute;right:4px;top:7px;width:24px;height:24px;border:0;background:transparent;color:#71849c;font-size:15px;cursor:pointer;border-radius:7px}.fav-location-remove:hover{background:#223148;color:#fff}.icon-btn,.primary,.secondary,.chip,.map-toggle,.route-toggle{border:0;cursor:pointer}.icon-btn{height:50px;border-radius:14px;background:#1b2940;color:#81aaff;font-size:19px}.field-wrap{position:relative}.field{width:100%;height:50px;border:1px solid #2b3a50;background:#0d141f;color:var(--text);border-radius:14px;padding:0 14px;font-size:16px;outline:none}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}.ac{position:absolute;top:54px;left:0;right:0;background:#101925;border:1px solid #2b3a50;border-radius:14px;overflow:hidden;z-index:40;display:none;box-shadow:0 18px 50px rgba(0,0,0,.4)}.ac.show{display:block}.ac-item{padding:11px 13px;color:#dce5f1;font-size:13px;line-height:1.35;border-bottom:1px solid #1c293b;cursor:pointer}.ac-item:last-child{border-bottom:0}
+.location-row{display:grid;grid-template-columns:46px 1fr;gap:8px}.save-location-btn{width:100%;height:42px;margin-top:8px;border:1px solid #365070;background:#132033;color:#dce9fb;border-radius:12px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}.save-location-btn:active{transform:scale(.99)}.save-location-btn:disabled{opacity:.5;cursor:default}.favorite-locations-wrap{margin-top:10px}.favorite-locations-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#65758a;font-weight:800;margin:0 0 6px 2px}.favorite-locations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.favorite-location{position:relative;min-width:0}.fav-location-btn{width:100%;height:38px;border:1px solid #29384d;background:#0d141f;color:#aebdd0;border-radius:11px;padding:0 23px 0 9px;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.fav-location-btn.saved{color:#dce9fb;border-color:#365070;background:#132033}.fav-location-btn.empty{color:#71849c;border-style:dashed}.fav-location-remove{position:absolute;right:4px;top:7px;width:24px;height:24px;border:0;background:transparent;color:#71849c;font-size:15px;cursor:pointer;border-radius:7px}.fav-location-remove:hover{background:#223148;color:#fff}.icon-btn,.primary,.secondary,.chip,.map-toggle,.route-toggle{border:0;cursor:pointer}.icon-btn{height:50px;border-radius:14px;background:#1b2940;color:#81aaff;font-size:19px}.field-wrap{position:relative}.field{width:100%;height:50px;border:1px solid #2b3a50;background:#0d141f;color:var(--text);border-radius:14px;padding:0 14px;font-size:16px;outline:none}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}.ac{position:absolute;top:54px;left:0;right:0;background:#101925;border:1px solid #2b3a50;border-radius:14px;overflow:hidden;z-index:40;display:none;box-shadow:0 18px 50px rgba(0,0,0,.4)}.ac.show{display:block}.ac-item{padding:11px 13px;color:#dce5f1;font-size:13px;line-height:1.35;border-bottom:1px solid #1c293b;cursor:pointer}.ac-item:last-child{border-bottom:0}
 .filter-summary-row{margin-top:10px}.filters-toggle{width:100%;min-height:44px;border:1px solid #29384d;background:#0d141f;color:#d8e2ef;border-radius:13px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;text-align:left}.filters-toggle strong{font-size:12px;color:#8eb7ff;white-space:nowrap}.filter-summary{font-size:12px;color:#a8b8cb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.filter-caret{font-size:17px;color:#6f829a;transition:transform .18s ease}.filters-toggle.open .filter-caret{transform:rotate(180deg)}.filters-panel{display:none;margin-top:10px;padding:3px 2px 2px;border-top:1px solid #202d40}.filters-panel.show{display:block}.label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;color:#6f829a;margin:16px 0 8px}.fuel-row,.radius-row,.mode-row{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid #29384d;background:#0d141f;color:#aebdd0;border-radius:999px;padding:9px 13px;font-size:13px;font-weight:700}.chip.active{background:#173764;border-color:#376ebf;color:#fff}.radius-row .chip.active{background:#173b29;border-color:#2c7449;color:#dff9e8}.mode-row .chip.active{background:#30261b;border-color:#73542d;color:#ffe4b2}.brand-select{width:100%;height:44px;border:1px solid #29384d;background:#0d141f;color:#dce5f1;border-radius:12px;padding:0 12px;outline:none}.brand-select:focus{border-color:var(--blue)}.primary{width:100%;height:52px;border-radius:14px;margin-top:12px;background:linear-gradient(135deg,#3478f6,#5a91ff);color:white;font-weight:800;font-size:15px;box-shadow:0 10px 28px rgba(52,120,246,.22)}.primary:disabled{opacity:.55;cursor:wait}.sub-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}.route-toggle,.map-toggle{background:transparent;color:#7fa9ee;font-size:12px;padding:6px 0}.data-note{font-size:11px;color:#65758a;text-align:right}
 .route-box{display:none;border-top:1px solid #233149;margin-top:12px;padding-top:12px}.route-box.show{display:block}.route-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.route-grid .field{height:46px;font-size:14px}.route-options{margin-top:10px}.route-options-label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#71849a;font-weight:800;margin:0 0 7px 2px}.route-option-row{display:flex;gap:7px;flex-wrap:wrap}.route-chip{border:1px solid #2b3a50;background:#0d141f;color:#aebdd0;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:750;cursor:pointer}.route-chip.active{background:#173764;border-color:#376ebf;color:#fff}.route-note{font-size:10px;color:#6d7f95;line-height:1.45;margin-top:7px}.secondary{width:100%;height:44px;margin-top:10px;background:#1c2a3e;color:#dce8fb;border-radius:12px;font-weight:700}
 #loading{display:none;color:var(--muted);font-size:13px;padding:18px 4px}.summary{display:none;margin:18px 0 10px;padding:14px 15px;background:linear-gradient(135deg,rgba(82,214,129,.11),rgba(79,140,255,.08));border:1px solid rgba(82,214,129,.25);border-radius:16px}.summary.show{display:block}.summary-title{font-size:13px;color:#dbe7f4}.summary-title strong{font-size:20px;color:var(--green);display:block;margin-top:3px}.summary-meta{margin-top:7px;font-size:12px;color:var(--muted);line-height:1.5}
@@ -47,6 +47,7 @@ button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;paddin
       <div class="ac" id="ac"></div>
     </div>
   </div>
+  <button class="save-location-btn" id="save-location-btn" type="button">★ Salva questa posizione</button>
   <div class="favorite-locations-wrap">
     <div class="favorite-locations-label">Posizioni preferite</div>
     <div class="favorite-locations" id="favorite-locations">
@@ -223,9 +224,22 @@ var stationVerdict = document.getElementById("station-verdict");
 var stationHistory = document.getElementById("station-history");
 var sortRow = document.getElementById("sort-row");
 var refreshBtn = document.getElementById("refresh-btn");
+var saveLocationBtn = document.getElementById("save-location-btn");
 
 loadFavorites();
 renderFavoriteLocations();
+updateSaveLocationButton();
+
+saveLocationBtn.onclick=function(){
+  var slot=favoriteLocations.findIndex(function(x){return !x;});
+  if(slot===-1){
+    alert("Hai già salvato 3 posizioni. Rimuovine una per salvarne un'altra.");
+    return;
+  }
+  saveFavoriteLocation(slot);
+};
+
+place.addEventListener("input",updateSaveLocationButton);
 
 refreshBtn.onclick=function(){
   refreshBtn.classList.add("spinning");
@@ -365,6 +379,15 @@ function renderFavoriteLocations(){
   }
 }
 
+function updateSaveLocationButton(){
+  if(!saveLocationBtn)return;
+  var q=place.value.trim();
+  var lat=+place.dataset.lat,lng=+place.dataset.lng;
+  var canSave=q.length>=2||(Number.isFinite(lat)&&Number.isFinite(lng));
+  saveLocationBtn.disabled=!canSave;
+  saveLocationBtn.textContent=canSave?"★ Salva questa posizione":"★ Inserisci una posizione da salvare";
+}
+
 function saveFavoriteLocation(slot){
   var q=place.value.trim();
   var lat=+place.dataset.lat,lng=+place.dataset.lng;
@@ -376,6 +399,7 @@ function saveFavoriteLocation(slot){
     favoriteLocations[slot]={label:label.slice(0,24),address:q||label,lat:+a,lng:+b};
     persistFavorites();
     renderFavoriteLocations();
+    updateSaveLocationButton();
   }
   if(Number.isFinite(lat)&&Number.isFinite(lng)){finish(lat,lng);return;}
   if(q.length<2){alert("Inserisci prima una posizione o usa il GPS.");return;}
