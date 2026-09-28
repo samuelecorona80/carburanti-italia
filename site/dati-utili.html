@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f18">
+<title>Dati utili carburanti — Carburanti Italia</title>
+<meta name="description" content="Giorni più convenienti, minimi e massimi, confronto self-servito, prezzi in zona, regione e Italia dai dati MIMIT.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0a0f18;--panel:#111925;--panel2:#151f2d;--line:#253247;--text:#f5f7fa;--muted:#8fa0b5;--blue:#4f8cff;--green:#52d681;--red:#ef6464;--amber:#f1b84b}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:radial-gradient(circle at top,#142139 0,#0a0f18 38%);color:var(--text);min-height:100vh}.shell{width:min(820px,100%);margin:auto;padding:18px 16px 44px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:800;font-size:18px}.brand span{color:var(--green)}.nav{display:flex;gap:12px;align-items:center}.nav a{color:#9fb4cc;text-decoration:none;font-size:12px}.hero{margin:32px 0 18px}.hero h1{font-size:clamp(30px,8vw,44px);line-height:1.04;margin:0 0 10px;letter-spacing:-1.3px}.hero p{color:var(--muted);line-height:1.55;margin:0}.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}.control{height:46px;border:1px solid var(--line);background:#0d141f;color:var(--text);border-radius:13px;padding:0 12px;font-weight:700}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:rgba(17,25,37,.94);border:1px solid var(--line);border-radius:18px;padding:15px}.card.wide{grid-column:1/-1}.eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:#70839a;font-weight:800}.value{font-size:27px;font-weight:800;margin-top:7px;letter-spacing:-.5px}.value.good{color:var(--green)}.value.bad{color:#ff8c8c}.sub{font-size:11px;color:var(--muted);line-height:1.45;margin-top:6px}.section-title{font-size:16px;margin:28px 0 10px}.day-list{display:grid;gap:6px}.day{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center}.bar{height:8px;background:#1b2738;border-radius:999px;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,#52d681,#4f8cff);border-radius:999px}.day strong{font-size:12px}.day em{font-style:normal;font-size:11px;color:#a8bacd}.local-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.btn{border:1px solid #365070;background:#132033;color:#dce9fb;border-radius:11px;padding:10px 12px;font-weight:800;font-size:11px;cursor:pointer}.btn.primary{background:#3478f6;border-color:#3478f6;color:#fff}.notice{padding:13px;border:1px solid rgba(241,184,75,.3);background:rgba(241,184,75,.08);border-radius:14px;color:#e8c77f;font-size:11px;line-height:1.55}.table{width:100%;border-collapse:collapse;font-size:11px}.table th,.table td{padding:9px 5px;border-bottom:1px solid #1e2b3e;text-align:right}.table th:first-child,.table td:first-child{text-align:left}.muted{color:var(--muted)}.footer{margin-top:32px;color:#61758d;font-size:10px;line-height:1.5;text-align:center}
+@media(max-width:560px){.shell{padding:13px 11px 38px}.controls{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr}.card.wide{grid-column:auto}.day{grid-template-columns:78px 1fr auto}.nav a:nth-child(2){display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="top">
+<div class="brand">⛽ Carburanti <span>Italia</span></div>
+<nav class="nav"><a href="index.html">Ricerca</a><a href="statistiche.html">Statistiche</a></nav>
+</header>
+
+<section class="hero">
+<h1>Dati utili per fare rifornimento.</h1>
+<p>Non solo il prezzo di oggi: storico, giorno della settimana, differenza self/servito e confronto tra zona, regione e Italia.</p>
+</section>
+
+<div class="controls">
+<select class="control" id="fuel"><option>Gasolio</option><option>Benzina</option><option>GPL</option><option>Metano</option></select>
+<select class="control" id="mode"><option value="self">Self</option><option value="servito">Servito</option></select>
+</div>
+
+<div id="loading" class="notice">Carico i dati…</div>
+<div id="content" style="display:none">
+
+<div class="cards">
+<div class="card"><div class="eyebrow">Media Italia oggi</div><div class="value" id="italy-avg">—</div><div class="sub" id="italy-range">—</div></div>
+<div class="card"><div class="eyebrow">Differenza self / servito</div><div class="value" id="service-gap">—</div><div class="sub" id="service-saving">—</div></div>
+<div class="card"><div class="eyebrow">Giorno storicamente più basso</div><div class="value good" id="best-day">—</div><div class="sub" id="best-day-note">ultimi dati disponibili</div></div>
+<div class="card"><div class="eyebrow">Giorno storicamente più alto</div><div class="value bad" id="worst-day">—</div><div class="sub" id="worst-day-note">—</div></div>
+<div class="card wide"><div class="eyebrow">Orario migliore?</div><div class="value" style="font-size:20px">Non determinabile dai dati attuali</div><div class="sub">Il dataset MIMIT usato dal sito è uno snapshot giornaliero pubblicato al mattino. Non esiste una serie storica intraday sufficiente per dire in modo serio che, per esempio, le 18:00 siano più convenienti delle 10:00. Il sito mostra invece la freschezza dell'ultimo aggiornamento.</div></div>
+</div>
+
+<h2 class="section-title">Prezzo medio per giorno della settimana</h2>
+<div class="card"><div id="days" class="day-list"></div><div class="sub">Media calcolata sullo storico disponibile del sito. È un'osservazione storica, non una previsione del prezzo futuro.</div></div>
+
+<h2 class="section-title">La tua zona</h2>
+<div class="card">
+<div class="eyebrow">Confronto locale</div>
+<div class="sub">Usa la posizione attuale o una posizione preferita salvata nella pagina principale. Calcolo min, max e media entro 10 km.</div>
+<div class="local-actions" id="local-actions"><button class="btn primary" id="gps">⌖ Posizione attuale</button></div>
+<div id="local-result" style="margin-top:12px"></div>
+</div>
+
+<h2 class="section-title">Regioni oggi</h2>
+<div class="card">
+<table class="table"><thead><tr><th>Regione</th><th>Media</th><th>Min</th><th>Max</th></tr></thead><tbody id="regions"></tbody></table>
+</div>
+
+<h2 class="section-title">Come leggere questi dati</h2>
+<div class="notice">Il prezzo minimo o massimo può riferirsi a un singolo impianto. Per decidere dove rifornire conviene guardare anche distanza, deviazione e storico del distributore. “Giorno migliore” significa il giorno con la media storica più bassa nel periodo disponibile, non una garanzia che quel giorno sarà sempre il più economico.</div>
+
+</div>
+<footer class="footer">Dati Open Data MIMIT · aggiornamento quotidiano · <a href="index.html" style="color:#7fa9ee">Torna alla ricerca</a></footer>
+</div>
+<script>
+(function(){
+"use strict";
+var latest=null,history=null,stations=null;
+var fuelEl=document.getElementById("fuel"),modeEl=document.getElementById("mode");
+Promise.all([
+ fetch("data/latest.json",{cache:"no-store"}).then(function(r){return r.json()}),
+ fetch("data/history.json",{cache:"no-store"}).then(function(r){return r.json()})
+]).then(function(x){
+ latest=x[0];history=x[1];
+ document.getElementById("loading").style.display="none";
+ document.getElementById("content").style.display="block";
+ render();
+ renderFavoriteButtons();
+}).catch(function(){document.getElementById("loading").textContent="Impossibile caricare i dati.";});
+fuelEl.onchange=render;modeEl.onchange=render;
+
+function euro(v){return v==null?"n.d.":Number(v).toFixed(3).replace(".",",")+" €/L"}
+function weekdayName(n){return ["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"][n]}
+function statsForDay(){
+ var fuel=fuelEl.value,mode=modeEl.value,buckets=[[],[],[],[],[],[],[]];
+ history.forEach(function(h){var p=h&&h.nazionale&&h.nazionale[fuel]&&h.nazionale[fuel][mode]&&h.nazionale[fuel][mode].media;if(p){var d=new Date(h.data+"T12:00:00");buckets[d.getDay()].push(+p);}});
+ return buckets.map(function(arr,i){return {day:i,count:arr.length,avg:arr.length?arr.reduce(function(a,b){return a+b},0)/arr.length:null};}).filter(function(x){return x.avg!==null});
+}
+function render(){
+ var fuel=fuelEl.value,mode=modeEl.value,n=latest.nazionale&&latest.nazionale[fuel]&&latest.nazionale[fuel][mode];
+ if(!n)return;
+ document.getElementById("italy-avg").textContent=euro(n.media);
+ document.getElementById("italy-range").textContent="Min "+euro(n.min)+" · Max "+euro(n.max)+" · "+(n.num_impianti||0).toLocaleString("it-IT")+" impianti";
+ var ns=latest.nazionale[fuel]||{},self=ns.self&&ns.self.media,serv=ns.servito&&ns.servito.media;
+ var gap=self&&serv?serv-self:null;
+ document.getElementById("service-gap").textContent=gap==null?"n.d.":"+"+gap.toFixed(3).replace(".",",")+" €/L";
+ document.getElementById("service-saving").textContent=gap==null?"":"Su 50 L il self vale circa "+(gap*50).toFixed(2).replace(".",",")+" € in meno.";
+ var ds=statsForDay().sort(function(a,b){return a.avg-b.avg}),best=ds[0],worst=ds[ds.length-1];
+ document.getElementById("best-day").textContent=best?weekdayName(best.day):"n.d.";
+ document.getElementById("best-day-note").textContent=best?euro(best.avg)+" di media · "+best.count+" rilevazioni":"";
+ document.getElementById("worst-day").textContent=worst?weekdayName(worst.day):"n.d.";
+ document.getElementById("worst-day-note").textContent=worst?euro(worst.avg)+" di media · "+worst.count+" rilevazioni":"";
+ renderDays(ds);
+ renderRegions();
+ var lr=document.getElementById("local-result");if(lr.dataset.lat)renderLocal(+lr.dataset.lat,+lr.dataset.lng,lr.dataset.label||"Zona");
+}
+function renderDays(){
+ var ds=statsForDay(),vals=ds.map(function(x){return x.avg}),lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals),wrap=document.getElementById("days");
+ ds.sort(function(a,b){return a.day-b.day});
+ wrap.innerHTML=ds.map(function(x){var pct=hi===lo?100:20+80*(hi-x.avg)/(hi-lo);return '<div class="day"><strong>'+weekdayName(x.day)+'</strong><div class="bar"><span style="width:'+pct.toFixed(0)+'%"></span></div><em>'+euro(x.avg)+'</em></div>';}).join("");
+}
+function renderRegions(){
+ var fuel=fuelEl.value,mode=modeEl.value,rows=[];
+ Object.keys(latest.regionale||{}).forEach(function(name){var s=latest.regionale[name]&&latest.regionale[name][fuel]&&latest.regionale[name][fuel][mode];if(s&&s.media)rows.push({name:name,s:s});});
+ rows.sort(function(a,b){return a.s.media-b.s.media});
+ document.getElementById("regions").innerHTML=rows.map(function(r){return '<tr><td>'+esc(r.name)+'</td><td>'+euro(r.s.media)+'</td><td>'+euro(r.s.min)+'</td><td>'+euro(r.s.max)+'</td></tr>';}).join("");
+}
+function loadStations(){if(stations)return Promise.resolve(stations);return fetch("data/stations.json").then(function(r){return r.json()}).then(function(x){stations=x;return x});}
+function hav(a,b,c,d){var R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180,z=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z))}
+function renderLocal(lat,lng,label){
+ var out=document.getElementById("local-result");out.dataset.lat=lat;out.dataset.lng=lng;out.dataset.label=label;out.innerHTML='<div class="sub">Calcolo '+esc(label)+'…</div>';
+ loadStations().then(function(list){
+  var fuel=fuelEl.value,mode=modeEl.value,vals=[];
+  list.forEach(function(s){if(!s.lat||!s.lng||!s.prezzi||!s.prezzi[fuel])return;var p=s.prezzi[fuel][mode];if(!p)return;var d=hav(lat,lng,s.lat,s.lng);if(d<=10)vals.push({p:+p,d:d,s:s});});
+  vals.sort(function(a,b){return a.p-b.p});if(!vals.length){out.innerHTML='<div class="sub">Nessun prezzo entro 10 km.</div>';return}
+  var avg=vals.reduce(function(a,b){return a+b.p},0)/vals.length,best=vals[0],worst=vals[vals.length-1];
+  out.innerHTML='<div class="cards"><div class="card"><div class="eyebrow">'+esc(label)+' · 10 km</div><div class="value good">'+euro(best.p)+'</div><div class="sub">Min · '+esc(best.s.bandiera||best.s.gestore||best.s.nome||"Distributore")+' · '+best.d.toFixed(1)+' km</div></div><div class="card"><div class="eyebrow">Media zona</div><div class="value">'+euro(avg)+'</div><div class="sub">'+vals.length+' distributori · max '+euro(worst.p)+'</div></div></div>';
+ });
+}
+document.getElementById("gps").onclick=function(){if(!navigator.geolocation){alert("GPS non disponibile");return}navigator.geolocation.getCurrentPosition(function(p){renderLocal(p.coords.latitude,p.coords.longitude,"Posizione attuale")},function(){alert("Impossibile ottenere la posizione")})};
+function renderFavoriteButtons(){try{var favs=JSON.parse(localStorage.getItem("fuel-favorite-locations-v1")||"[]"),wrap=document.getElementById("local-actions");favs.filter(Boolean).forEach(function(f){var b=document.createElement("button");b.className="btn";b.textContent="★ "+f.label;b.onclick=function(){renderLocal(+f.lat,+f.lng,f.label)};wrap.appendChild(b);});}catch(e){}}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+})();
+</script>
+</body>
+</html>
