@@ -13,6 +13,8 @@ on:
       - 'site/*.html'
       - 'site/*.js'
       - 'site/*.css'
+      - 'site/*.webmanifest'
+      - 'site/*.svg'
       - '.github/workflows/daily_update.yml'
 
 permissions:
@@ -31,6 +33,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Check repository size
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          size_kb=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }} | jq -r '.size')
+          echo "GitHub repository size: ${size_kb} KB"
+          if [ "$size_kb" -ge 750000 ]; then
+            echo "::error::Repository size is above 750 MB. Generated data should be moved out of Git history."
+            exit 1
+          elif [ "$size_kb" -ge 500000 ]; then
+            echo "::warning::Repository size is above 500 MB; plan data-storage migration."
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5
