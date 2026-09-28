@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0f18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Carburanti">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="app-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app-icon.svg">
 <title>Trova carburante vicino a te</title>
 <meta name="description" content="Trova i distributori più economici vicino a un punto, scegli il raggio e confronta prezzo, distanza e differenza sul pieno. Dati MIMIT aggiornati quotidianamente.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -182,6 +188,7 @@ button,input,select{font:inherit}.shell{width:min(760px,100%);margin:auto;paddin
 "use strict";
 
 var stations = [];
+var stationsPromise = null;
 var fuel = "Gasolio";
 var radius = 5;
 var mode = "self";
@@ -253,12 +260,29 @@ refreshBtn.onclick=function(){
   window.location.replace(url.toString());
 };
 
-fetch("data/stations.json")
-  .then(function(r){ if(!r.ok) throw new Error("Dati non disponibili"); return r.json(); })
-  .then(function(d){
-    stations = d; populateBrands(); restore(); updateFilterSummary(); renderFavoriteStations();
-  })
-  .catch(function(){ empty.textContent = "Impossibile caricare i dati dei distributori."; empty.classList.add("show"); });
+restore();
+updateFilterSummary();
+renderFavoriteStations();
+
+function loadStations(){
+  if(stations.length)return Promise.resolve(stations);
+  if(stationsPromise)return stationsPromise;
+  stationsPromise=fetch("data/stations.json")
+    .then(function(r){if(!r.ok)throw new Error("Dati non disponibili");return r.json();})
+    .then(function(d){
+      stations=d;
+      populateBrands();
+      restore();
+      updateFilterSummary();
+      renderFavoriteStations();
+      return stations;
+    })
+    .catch(function(err){
+      stationsPromise=null;
+      throw err;
+    });
+  return stationsPromise;
+}
 
 bindChips("fuel-row","fuel",function(v){ fuel=v; updateFilterSummary(); renderFavoriteStations(); });
 bindChips("radius-row","radius",function(v){ radius=+v; updateFilterSummary(); });
@@ -578,12 +602,19 @@ function useGps(){
       .then(function(r){return r.json();})
       .then(function(x){place.value=(x.display_name||"Posizione attuale").split(",").slice(0,3).join(",").trim();})
       .catch(function(){place.value="Posizione attuale";})
-      .finally(function(){setBusy(false);runPoint(lat,lng);});
+      .finally(function(){
+        if(stations.length){setBusy(false);runPoint(lat,lng);}
+        else loadStations().then(function(){setBusy(false);runPoint(lat,lng);}).catch(function(){setBusy(false);alert("Impossibile caricare i dati dei distributori.");});
+      });
   },function(){setBusy(false);alert("Non riesco a ottenere la posizione.");},{enableHighAccuracy:true,timeout:10000});
 }
 
 function searchPoint(){
-  if(!stations.length){alert("I dati stanno ancora caricando.");return;}
+  if(!stations.length){
+    setBusy(true,"Carico i distributori…");
+    loadStations().then(function(){setBusy(false);searchPoint();}).catch(function(){setBusy(false);alert("Impossibile caricare i dati dei distributori.");});
+    return;
+  }
   var lat=+place.dataset.lat,lng=+place.dataset.lng;
   if(Number.isFinite(lat)&&Number.isFinite(lng)){runPoint(lat,lng);return;}
   var q=place.value.trim(); if(q.length<2){place.focus();return;}
@@ -960,6 +991,11 @@ function renderRouteFavorites(target){
 }
 
 function searchRoute(){
+  if(!stations.length){
+    setBusy(true,"Carico i distributori…");
+    loadStations().then(function(){setBusy(false);searchRoute();}).catch(function(){setBusy(false);alert("Impossibile caricare i dati dei distributori.");});
+    return;
+  }
   resultDistanceLabel="deviazione";
   var from=fromInput.value.trim();
   var to=toInput.value.trim();
@@ -1146,5 +1182,12 @@ function activate(id,key,val){document.getElementById(id).querySelectorAll(".chi
 })();
 </script>
 
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
 </body>
 </html>
