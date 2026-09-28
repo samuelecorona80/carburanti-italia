@@ -34,6 +34,9 @@ def main() -> None:
         SITE / "app.js",
         SITE / "cerca.js",
         SITE / "style.css",
+        SITE / "manifest.webmanifest",
+        SITE / "sw.js",
+        SITE / "app-icon.svg",
         DATA / "latest.json",
         DATA / "last_update.json",
         DATA / "stations.json",
@@ -45,6 +48,18 @@ def main() -> None:
             fail(f"missing or empty {path.relative_to(ROOT)}")
 
     index = (SITE / "index.html").read_text(encoding="utf-8")
+    for token in (
+        'rel="manifest"',
+        'manifest.webmanifest',
+        'navigator.serviceWorker.register',
+    ):
+        if token not in index:
+            fail(f"index.html missing PWA token: {token}")
+
+    manifest = load_json(SITE / "manifest.webmanifest")
+    if manifest.get("display") != "standalone":
+        fail("manifest.webmanifest is not standalone")
+
     for token in (
         'id="search"',
         'id="refresh-btn"',
